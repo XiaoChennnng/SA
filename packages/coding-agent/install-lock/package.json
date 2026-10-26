@@ -1,0 +1,15 @@
+{
+	"name": "@sa/coding-agent-install",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Lockfile root used by the SA installer and updater.",
+	"dependencies": {
+		"@sa/coding-agent": "0.1.0"
+	},
+	"overrides": {
+		"protobufjs": "7.6.6"
+	},
+	"engines": {
+		"node": ">=22.19.0"
+	}
+}
