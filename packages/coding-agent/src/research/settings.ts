@@ -1,5 +1,6 @@
-import { join } from "node:path";
-import { expandTildePath, getAgentDir } from "../config.ts";
+import { createHash } from "node:crypto";
+import { isAbsolute, join, posix, resolve as resolveNative } from "node:path";
+import { expandTildePath } from "../config.ts";
 import type { ResearchSettings } from "./types.ts";
 
 export const RESEARCH_DEFAULTS = {
@@ -27,14 +28,50 @@ export interface ResearchSettingsInput {
 	requestTimeoutMs?: number;
 }
 
-function resolvePath(value: string | undefined, fallback: string): string {
+/** The active execution workspace, used to derive research storage paths. */
+export interface ResearchPathContext {
+	localCwd: string;
+	workspaceKind?: "local" | "ssh";
+	workspaceCwd?: string;
+	workspaceDisplay?: string;
+	remoteHome?: string;
+}
+
+function resolveLocalPath(value: string | undefined, fallback: string, baseDir: string): string {
 	if (!value?.trim()) return fallback;
-	return expandTildePath(value.trim());
+	const expanded = expandTildePath(value.trim());
+	return isAbsolute(expanded) ? expanded : resolveNative(baseDir, expanded);
+}
+
+function resolveRemotePath(value: string | undefined, fallback: string, baseDir: string, home?: string): string {
+	if (!value?.trim()) return fallback;
+	const trimmed = value.trim();
+	if (trimmed === "~") return home ?? "~";
+	if (trimmed.startsWith("~/")) return posix.join(home ?? "~", trimmed.slice(2));
+	return posix.isAbsolute(trimmed) ? posix.normalize(trimmed) : posix.resolve(baseDir, trimmed);
+}
+
+function remoteWorkspaceKey(context: ResearchPathContext, workspaceCwd: string): string {
+	const identity = context.workspaceDisplay ?? workspaceCwd;
+	return createHash("sha256").update(identity).digest("hex").slice(0, 16);
 }
 
 /** Fill defaults and resolve paths from the `research` settings block. */
-export function resolveResearchSettings(input: ResearchSettingsInput = {}): ResearchSettings {
-	const researchRoot = join(getAgentDir(), "research");
+export function resolveResearchSettings(
+	input: ResearchSettingsInput = {},
+	context?: ResearchPathContext,
+): ResearchSettings {
+	const localCwd = resolveNative(context?.localCwd ?? process.cwd());
+	const workspaceKind = context?.workspaceKind ?? "local";
+	const workspaceCwd = context?.workspaceCwd ?? localCwd;
+	const localBase = workspaceKind === "ssh" ? localCwd : workspaceCwd;
+	const localRoot =
+		workspaceKind === "ssh"
+			? join(localBase, "research", "remote", remoteWorkspaceKey(context ?? { localCwd }, workspaceCwd))
+			: join(localBase, "research");
+	const remoteRoot = posix.join(workspaceCwd, "research");
+	const defaultWorkspaceDir =
+		workspaceKind === "ssh" ? posix.join(remoteRoot, "workspace") : join(localRoot, "workspace");
 	return {
 		mailto: input.mailto?.trim() || undefined,
 		semanticScholarApiKey: input.semanticScholarApiKey?.trim() || undefined,
@@ -47,10 +84,13 @@ export function resolveResearchSettings(input: ResearchSettingsInput = {}): Rese
 		pdfCommand: input.pdfCommand?.trim() || undefined,
 		pythonPath: input.pythonPath?.trim() || undefined,
 		latexCommand: input.latexCommand?.trim() || undefined,
-		databasePath: resolvePath(input.databasePath, join(researchRoot, "research.db")),
-		cacheDir: resolvePath(input.cacheDir, join(researchRoot, "cache")),
-		workDir: resolvePath(input.workDir, join(researchRoot, "work")),
-		workspaceDir: resolvePath(input.workspaceDir, join(researchRoot, "workspace")),
+		databasePath: resolveLocalPath(input.databasePath, join(localRoot, "knowledge", "research.db"), localBase),
+		cacheDir: resolveLocalPath(input.cacheDir, join(localRoot, "cache"), localBase),
+		workDir: resolveLocalPath(input.workDir, join(localRoot, "work"), localBase),
+		workspaceDir:
+			workspaceKind === "ssh"
+				? resolveRemotePath(input.workspaceDir, defaultWorkspaceDir, workspaceCwd, context?.remoteHome)
+				: resolveLocalPath(input.workspaceDir, defaultWorkspaceDir, workspaceCwd),
 		maxResults: Math.min(50, Math.max(1, Math.round(input.maxResults ?? RESEARCH_DEFAULTS.maxResults))),
 		requestTimeoutMs: Math.max(1000, Math.round(input.requestTimeoutMs ?? RESEARCH_DEFAULTS.requestTimeoutMs)),
 	};

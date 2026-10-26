@@ -58,8 +58,9 @@ PDF text extraction uses `pdftotext`, `mutool`, or Python with PyMuPDF; LaTeX an
 system installations. Configure APIs and Chinese sources with `/research`. Use `/doctor` to have SA
 inspect the current workspace for missing dependencies and install them in the conversation. Use
 `/ssh user@host:/path` to work in a remote Linux/macOS directory with the same tools, using a key,
-ssh-agent, or a masked password prompt. Local caches, the knowledge base, and settings live under
-`~/.sa/agent/research/`; files in a remote workspace stay on that server.
+ssh-agent, or a masked password prompt. Research caches and the knowledge base live under the active
+workspace's `research/` directory (local per remote workspace for SSH); settings live under
+`~/.sa/agent`; files in a remote workspace stay on that server.
 See [Research Workflow](packages/coding-agent/docs/research.md) and
 [SSH remote workspace](packages/coding-agent/docs/remote-workspace.md) for usage and settings.
 

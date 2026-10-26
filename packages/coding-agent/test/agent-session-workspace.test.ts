@@ -44,17 +44,23 @@ describe("AgentSession workspace switching", () => {
 		if (tempDir && existsSync(tempDir)) rmSync(tempDir, { recursive: true });
 	});
 
-	it("switches tools and prompt to a remote workspace and back", async () => {
+	it("switches tools, research storage, and prompt to a remote workspace and back", async () => {
 		expect(session.getWorkspace().info.kind).toBe("local");
 		expect(session.systemPrompt).not.toContain("<workspace>");
+		expect(session.getResearchSettings().workspaceDir).toBe(join(tempDir, "research", "workspace"));
+		expect(session.getResearchSettings().databasePath).toBe(join(tempDir, "research", "knowledge", "research.db"));
 		const remote = new FakeRemoteWorkspace();
 		await session.setWorkspace(remote);
 		expect(session.getWorkspace().info.kind).toBe("ssh");
 		expect(session.systemPrompt).toContain("Remote SSH workspace: tester@host:/work");
+		expect(session.getResearchSettings().workspaceDir).toBe("/work/research/workspace");
+		expect(session.getResearchSettings().databasePath).toContain(join(tempDir, "research", "remote"));
+		expect(session.getResearchSettings().cacheDir).toContain(join(tempDir, "research", "remote"));
 		expect(session.getActiveToolNames()).toContain("read");
 		expect(session.getActiveToolNames()).toContain("python_run");
 		await session.setWorkspace(createLocalWorkspace(tempDir));
 		expect(session.getWorkspace().info.kind).toBe("local");
+		expect(session.getResearchSettings().workspaceDir).toBe(join(tempDir, "research", "workspace"));
 		expect(session.systemPrompt).not.toContain("<workspace>");
 	});
 });

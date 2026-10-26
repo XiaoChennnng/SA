@@ -14,7 +14,7 @@ function env(overrides: Partial<DoctorEnvironment> = {}): DoctorEnvironment {
 		label: "tester@host:/work",
 		platform: "linux",
 		home: "/home/tester",
-		remotePaths: { workspacePath: "/work", researchDir: "/work/research" },
+		remotePaths: { workspacePath: "/work", researchDir: "/work/research/workspace" },
 		async probe(command, args = []) {
 			const line = `${command} ${args.join(" ")}`.trim();
 			if (line === "npm --version") return { ok: true, status: 0, stdout: "10.0.0\n", stderr: "" };

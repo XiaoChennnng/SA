@@ -31,7 +31,7 @@ export class FakeRemoteWorkspace implements ToolWorkspace {
 			user: "tester",
 			home: "/home/tester",
 			workspacePath: "/work",
-			researchDir: "/work/research",
+			researchDir: "/work/research/workspace",
 			platform: "linux",
 			arch: "x64",
 			loginShell: "bash",

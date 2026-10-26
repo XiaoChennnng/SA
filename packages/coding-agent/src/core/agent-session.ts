@@ -3698,7 +3698,7 @@ export class AgentSession {
 						grep: { operations: remote.grep },
 					}
 				: {}),
-			research: { getSettings: () => resolveResearchSettings(this.settingsManager.getResearchSettings()) },
+			research: { getSettings: () => this.getResearchSettings() },
 		};
 		return createAllToolDefinitions(this._cwd, options);
 	}
@@ -3712,6 +3712,18 @@ export class AgentSession {
 	/** Current execution workspace for file and command tools. */
 	getWorkspace(): ToolWorkspace {
 		return this._workspace;
+	}
+
+	/** Research settings with storage paths derived from the current workspace. */
+	getResearchSettings() {
+		const info = this._workspace.info;
+		return resolveResearchSettings(this.settingsManager.getResearchSettings(), {
+			localCwd: this._cwd,
+			workspaceKind: info.kind,
+			workspaceCwd: info.cwd,
+			workspaceDisplay: info.display,
+			remoteHome: info.remote?.home,
+		});
 	}
 
 	/** Switch the execution workspace (for example local to SSH). The session must be idle. */

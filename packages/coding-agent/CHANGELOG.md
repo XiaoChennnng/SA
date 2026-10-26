@@ -17,6 +17,7 @@
 
 ### Changed
 
+- Research storage now follows the active workspace instead of a fixed `~/.sa/agent/research` default: research files live under `<workspace>/research/workspace`, with the SQLite knowledge base at `<workspace>/research/knowledge/research.db`, paper cache at `<workspace>/research/cache`, and temporary work at `<workspace>/research/work`. In SSH workspaces the research files stay remote; the knowledge base and cache stay local under `<local-workspace>/research/remote/<workspace-hash>/`. Explicit research path settings still override the derived paths.
 - SA now identifies itself as **Science Agent**, an agent built for scientific research, in the system prompt, CLI help, first-run screen, and documentation. The default prompt also grounds claims in evidence, forbids fabricated references or results, and asks for reproducible, uncertainty-aware work.
 - `pi update` for installs from the pi.dev installer no longer passes `--min-release-age=0` to `npm ci`. The release lockfile pins every package, so the flag had no effect, and security scanners that block it stopped the update ([#11262](https://github.com/earendil-works/pi/issues/11262))
 - `/model` and `/scoped-models` now show a model's name next to its ID when the name adds words the ID lacks, such as a renamed `models.json` override ([#5916](https://github.com/earendil-works/pi/issues/5916), [#11347](https://github.com/earendil-works/pi/pull/11347))

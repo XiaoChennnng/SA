@@ -32,7 +32,8 @@ Once connected:
 - Relative paths resolve inside the remote workspace, using POSIX paths. Absolute paths are remote
   paths; local Windows paths do not apply.
 - Literature and web search, the note/experiment/citation SQLite database, and paper caches stay on
-  the local SA host.
+  the local SA host. Their paths are derived from the local workspace and isolated per remote
+  workspace under `<local-workspace>/research/remote/<workspace-hash>/`.
 
 ## Commands
 
@@ -56,9 +57,11 @@ automatically on startup.
 
 ## Research files on the remote host
 
-The remote research directory defaults to `<workspace>/research` and can be changed in the wizard or
-a profile. `research_files` is confined to this directory. `paper_write` writes its Markdown source
-and PDF under it, unless you provide an absolute output path.
+The remote research directory defaults to `<workspace>/research/workspace` and can be changed in the
+wizard or a profile. `research_files` is confined to this directory. `paper_write` writes its
+Markdown source and PDF under it, unless you provide an absolute output path. The local knowledge
+base and paper cache for this connection follow the local workspace under
+`<local-workspace>/research/remote/<workspace-hash>/`.
 
 The remote host needs its own dependencies. Run `/doctor` after connecting; SA checks the active
 workspace and reports missing tools. `/doctor` asks SA to run real commands in the current

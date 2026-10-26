@@ -113,7 +113,9 @@ sans fonts, and one or two columns.
 ## Research workspace
 
 The workspace is a user-visible folder for everything the research agent creates. Its default root
-is `~/.sa/agent/research/workspace/` and it is configurable with `research.workspaceDir`.
+follows the active workspace: `<workspace>/research/workspace` for a local session and
+`<remote-workspace>/research/workspace` for an SSH session. It can be overridden with
+`research.workspaceDir`.
 
 `research_files` can create directories, write and read text, move, copy, delete, inspect, and list
 files. All paths are confined to the workspace root; `..` and absolute escapes are rejected. A
@@ -129,8 +131,8 @@ workspace/
 └── manuscripts/     # Markdown sources and paper_write PDFs
 ```
 
-Create new folders freely when a project needs them; keep research artifacts out of the project root
-unless the user asks otherwise.
+Create new folders freely when a project needs them; keep research artifacts under the workspace's
+`research/workspace/` directory rather than scattering them through the project root.
 
 ## Web search and reading
 
@@ -162,13 +164,26 @@ file.
 
 ## Storage
 
-By default everything lives under `~/.sa/agent/research/`:
+Research storage follows the active workspace; there is no fixed home-directory default. For a local
+workspace the layout is:
 
-- `research.db` — SQLite database with full-text indexes for papers, notes, experiments, and citations
-- `cache/papers/` — downloaded PDFs and extracted text
-- `work/` — temporary Python scripts and build artifacts
+```text
+<workspace>/research/
+├── workspace/                 # research_files, paper_write, manuscripts
+├── knowledge/research.db      # SQLite full-text knowledge base
+├── cache/                     # downloaded PDFs and extracted text
+└── work/                      # temporary scripts and build artifacts
+```
 
-Nothing is uploaded. Deleting this directory resets the research knowledge base.
+For an SSH workspace, research files and `paper_write` output live on the remote host under
+`<remote-workspace>/research/workspace`. The SQLite knowledge base, paper cache, and work directory
+stay on the SA host, isolated per remote workspace under
+`<local-workspace>/research/remote/<workspace-hash>/`. This keeps SQLite and PDF extraction local
+while still following the workspace identity. Explicit `databasePath`, `cacheDir`, `workDir`, or
+`workspaceDir` settings override the derived paths.
+
+Nothing is uploaded. Deleting a workspace's `research/` directory resets its knowledge base and
+cache.
 
 ## System dependencies
 
@@ -195,7 +210,8 @@ the missing items in the conversation after you confirm.
 mode, `read`, `write`, `edit`, `grep`, `find`, `ls`, `bash`, `python_run`, `latex_build`,
 `paper_write`, and `research_files` operate on the server. Literature/web search, the note and
 experiment database, and paper caches stay local. Remote research files default to
-`<remote-workspace>/research`. Use `/doctor` after connecting to check the server's Python,
+`<remote-workspace>/research/workspace`; the local database/cache for that remote workspace live
+under `<local-workspace>/research/remote/<workspace-hash>/`. Use `/doctor` after connecting to check the server's Python,
 reportlab, LaTeX, fonts, and search tools. See [SSH remote workspace](remote-workspace.md) for setup,
 security, and limitations.
 
@@ -214,10 +230,6 @@ Add a `research` block to `settings.json`:
     "wanfangAppKey": "...",
     "cnkiCommand": "cnki-search search \"{query}\" --size {limit} --format json",
     "nstlCommand": "nstl-gateway search \"{query}\" --limit {limit} --json",
-    "databasePath": "~/.sa/agent/research/research.db",
-    "cacheDir": "~/.sa/agent/research/cache",
-    "workDir": "~/.sa/agent/research/work",
-    "workspaceDir": "~/.sa/agent/research/workspace",
     "pdfCommand": "pdftotext",
     "pythonPath": "python",
     "latexCommand": "latexmk",
@@ -237,10 +249,10 @@ Add a `research` block to `settings.json`:
 | `wanfangAppKey` | — | Wanfang open-platform APP_KEY, enables Chinese journal/thesis/conference search |
 | `cnkiCommand` | — | Local command that searches CNKI and prints JSON; supports `{query}` and `{limit}` |
 | `nstlCommand` | — | Institutional NSTL gateway command that prints JSON; supports `{query}` and `{limit}` |
-| `databasePath` | `~/.sa/agent/research/research.db` | SQLite knowledge base |
-| `cacheDir` | `~/.sa/agent/research/cache` | Downloaded PDFs and extracted text |
-| `workDir` | `~/.sa/agent/research/work` | Temporary scripts and generated files |
-| `workspaceDir` | `~/.sa/agent/research/workspace` | User-visible research workspace for papers, notes, data, figures, and manuscripts |
+| `databasePath` | `<workspace>/research/knowledge/research.db` | SQLite knowledge base; local per workspace even in SSH mode |
+| `cacheDir` | `<workspace>/research/cache` | Downloaded PDFs and extracted text; local per workspace even in SSH mode |
+| `workDir` | `<workspace>/research/work` | Temporary scripts and generated files |
+| `workspaceDir` | `<workspace>/research/workspace` | User-visible research workspace; remote workspace in SSH mode |
 | `pdfCommand` | auto-detect | `pdftotext`, `mutool`, or a Python executable with PyMuPDF |
 | `pythonPath` | auto-detect | Python executable for `python_run` |
 | `latexCommand` | auto-detect | LaTeX engine or executable for `latex_build` |

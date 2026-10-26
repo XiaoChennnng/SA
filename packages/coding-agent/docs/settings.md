@@ -176,10 +176,10 @@ Python tools. See [Research Workflow](research.md) for usage and system requirem
 | `wanfangAppKey` | string | — | Wanfang open-platform APP_KEY, enables Chinese journal/thesis/conference search |
 | `cnkiCommand` | string | — | Local command that searches CNKI and prints JSON; supports `{query}` and `{limit}` |
 | `nstlCommand` | string | — | Institutional NSTL gateway command that prints JSON; supports `{query}` and `{limit}` |
-| `databasePath` | string | `~/.sa/agent/research/research.db` | SQLite knowledge base |
-| `cacheDir` | string | `~/.sa/agent/research/cache` | PDF and extracted-text cache |
-| `workDir` | string | `~/.sa/agent/research/work` | Temporary scripts and outputs |
-| `workspaceDir` | string | `~/.sa/agent/research/workspace` | Research workspace for papers, notes, data, figures, and manuscripts |
+| `databasePath` | string | `<workspace>/research/knowledge/research.db` | SQLite knowledge base; local per workspace even in SSH mode |
+| `cacheDir` | string | `<workspace>/research/cache` | PDF and extracted-text cache; local per workspace even in SSH mode |
+| `workDir` | string | `<workspace>/research/work` | Temporary scripts and outputs |
+| `workspaceDir` | string | `<workspace>/research/workspace` | Research workspace for papers, notes, data, figures, and manuscripts; remote workspace in SSH mode |
 | `pdfCommand` | string | auto-detect | `pdftotext`, `mutool`, or Python with PyMuPDF |
 | `pythonPath` | string | auto-detect | Python executable for `python_run` |
 | `latexCommand` | string | auto-detect | LaTeX engine for `latex_build` |
@@ -203,7 +203,7 @@ are session-selectable; SA does not connect automatically on startup. See
         "identityFile": "~/.ssh/id_ed25519",
         "auth": "key",
         "path": "/data/project",
-        "researchDir": "/data/project/research"
+        "researchDir": "/data/project/research/workspace"
       }
     },
     "lastProfile": "gpu-lab"
@@ -220,12 +220,13 @@ are session-selectable; SA does not connect automatically on startup. See
 | `profiles.<name>.identityFile` | string | ssh config/agent | Private key path. |
 | `profiles.<name>.auth` | `"key"` \| `"password"` | `"key"` | Authentication method. Password profiles prompt at connect time; passwords are not stored. |
 | `profiles.<name>.path` | string | remote home | Remote workspace directory. |
-| `profiles.<name>.researchDir` | string | `<path>/research` | Remote research-files directory. |
+| `profiles.<name>.researchDir` | string | `<path>/research/workspace` | Remote research-files directory. |
 | `lastProfile` | string | — | Last used profile, used for ordering and status only. |
 
-Use `/doctor` to check the active workspace (local or SSH) for missing tools. `research` paths
-(`databasePath`, `cacheDir`, `workDir`, `workspaceDir`) remain local even in SSH mode; remote
-research files use the profile's `researchDir`.
+Use `/doctor` to check the active workspace (local or SSH) for missing tools. Research storage paths
+are derived from the active workspace unless explicitly set. In SSH mode the research workspace is
+remote (`researchDir`), while the SQLite database, cache, and work directory stay on the SA host
+under `<local-workspace>/research/remote/<workspace-hash>/`.
 
 ## Updates and warnings
 

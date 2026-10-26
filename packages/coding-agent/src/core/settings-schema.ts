@@ -215,7 +215,7 @@ const SshProfileSchema = Type.Object({
 	),
 	path: Type.Optional(Type.String({ description: "Remote workspace directory; defaults to the remote home." })),
 	researchDir: Type.Optional(
-		Type.String({ description: "Remote research files directory; defaults to <path>/research." }),
+		Type.String({ description: "Remote research files directory; defaults to <path>/research/workspace." }),
 	),
 });
 
@@ -258,12 +258,27 @@ const ResearchSettingsSchema = Type.Object({
 		}),
 	),
 	databasePath: Type.Optional(
-		Type.String({ description: "SQLite knowledge base path (default: ~/.sa/agent/research/research.db)." }),
+		Type.String({
+			description:
+				"SQLite knowledge base path (default: <workspace>/research/knowledge/research.db). In SSH workspaces it stays on the SA host under the local workspace.",
+		}),
 	),
-	cacheDir: Type.Optional(Type.String({ description: "Directory for downloaded papers and extracted text." })),
-	workDir: Type.Optional(Type.String({ description: "Directory for temporary scripts and generated files." })),
+	cacheDir: Type.Optional(
+		Type.String({
+			description:
+				"Directory for downloaded papers and extracted text (default: <workspace>/research/cache). In SSH workspaces it stays on the SA host under the local workspace.",
+		}),
+	),
+	workDir: Type.Optional(
+		Type.String({
+			description: "Directory for temporary scripts and generated files (default: <workspace>/research/work).",
+		}),
+	),
 	workspaceDir: Type.Optional(
-		Type.String({ description: "Research workspace for manuscripts, data, figures, and other managed files." }),
+		Type.String({
+			description:
+				"Research workspace for manuscripts, data, figures, and other managed files (default: <workspace>/research/workspace; remote workspace under SSH).",
+		}),
 	),
 	pdfCommand: Type.Optional(
 		Type.String({ description: "PDF text extractor: pdftotext, mutool, or a Python executable with PyMuPDF." }),

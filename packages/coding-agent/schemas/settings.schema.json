@@ -45,19 +45,19 @@
         },
         "databasePath": {
           "type": "string",
-          "description": "SQLite knowledge base path (default: ~/.sa/agent/research/research.db)."
+          "description": "SQLite knowledge base path (default: <workspace>/research/knowledge/research.db). In SSH workspaces it stays on the SA host under the local workspace."
         },
         "cacheDir": {
           "type": "string",
-          "description": "Directory for downloaded papers and extracted text."
+          "description": "Directory for downloaded papers and extracted text (default: <workspace>/research/cache). In SSH workspaces it stays on the SA host under the local workspace."
         },
         "workDir": {
           "type": "string",
-          "description": "Directory for temporary scripts and generated files."
+          "description": "Directory for temporary scripts and generated files (default: <workspace>/research/work)."
         },
         "workspaceDir": {
           "type": "string",
-          "description": "Research workspace for manuscripts, data, figures, and other managed files."
+          "description": "Research workspace for manuscripts, data, figures, and other managed files (default: <workspace>/research/workspace; remote workspace under SSH)."
         },
         "pdfCommand": {
           "type": "string",
@@ -134,7 +134,7 @@
                 },
                 "researchDir": {
                   "type": "string",
-                  "description": "Remote research files directory; defaults to <path>/research."
+                  "description": "Remote research files directory; defaults to <path>/research/workspace."
                 }
               }
             }

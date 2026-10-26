@@ -35,8 +35,10 @@ describe("remote research tools", () => {
 		expect(result.content[0]?.type).toBe("text");
 		expect((result.content[0] as { text: string }).text).toContain("remote python ok");
 		expect(result.details?.exitCode).toBe(0);
-		expect(result.details?.scriptPath).toMatch(/^\/work\/research\/\.tmp\/sa-python-/);
-		expect([...workspace.files.keys()].some((path) => path.startsWith("/work/research/.tmp/sa-python-"))).toBe(true);
+		expect(result.details?.scriptPath).toMatch(/^\/work\/research\/workspace\/\.tmp\/sa-python-/);
+		expect(
+			[...workspace.files.keys()].some((path) => path.startsWith("/work/research/workspace/.tmp/sa-python-")),
+		).toBe(true);
 	});
 
 	it("renders paper_write with remote Python and writes remote files", async () => {
@@ -58,8 +60,8 @@ describe("remote research tools", () => {
 			undefined,
 			context(workspace),
 		);
-		expect(result.details.pdfPath).toBe("/work/research/manuscripts/Remote-Paper/paper.pdf");
-		expect(result.details.sourcePath).toBe("/work/research/manuscripts/Remote-Paper/paper.md");
+		expect(result.details.pdfPath).toBe("/work/research/workspace/manuscripts/Remote-Paper/paper.pdf");
+		expect(result.details.sourcePath).toBe("/work/research/workspace/manuscripts/Remote-Paper/paper.md");
 		expect(result.details.pages).toBe(2);
 		expect(await workspace.exists(result.details.pdfPath)).toBe(true);
 		expect(await workspace.exists(result.details.sourcePath)).toBe(true);
@@ -99,6 +101,6 @@ describe("remote research tools", () => {
 			context(workspace),
 		);
 		expect((list.content[0] as { text: string }).text).toContain("papers/remote.md");
-		expect(await workspace.readText("/work/research/papers/remote.md")).toBe("# Remote\n");
+		expect(await workspace.readText("/work/research/workspace/papers/remote.md")).toBe("# Remote\n");
 	});
 });

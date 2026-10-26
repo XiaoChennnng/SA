@@ -178,6 +178,7 @@ export function formatResearchConfigStatus(settings: ResearchSettings): string {
 		"",
 		"Get API keys:",
 		...RESEARCH_CONFIG_FIELDS.filter((field) => field.applyUrl).map((field) => `- ${field.label}: ${field.applyUrl}`),
+		"Storage paths follow the active workspace unless explicitly set; in SSH mode research files are remote while the knowledge base and cache stay local per workspace.",
 		"Secrets are stored in settings.json in plain text.",
 		"Set a value: /research set <field> <value>",
 		"Clear a value: /research clear <field>",

@@ -103,7 +103,7 @@ export async function probeSshTarget(target: RemoteWorkspaceTarget, options: Ssh
 	if (!home) throw new Error(`Could not determine the home directory on ${target.host}`);
 	if (!values.bash && !values.sh) throw new Error(`Remote host ${target.host} has neither bash nor sh`);
 	const path = expandRemotePath(options.path, home);
-	const researchDir = expandRemotePath(options.researchDir ?? posix.join(path, "research"), home);
+	const researchDir = expandRemotePath(options.researchDir ?? posix.join(path, "research", "workspace"), home);
 	const checkScript = [
 		`p=${quotePosix(path)}`,
 		'if [ -e "$p" ]; then echo exists=1; else echo exists=0; fi',

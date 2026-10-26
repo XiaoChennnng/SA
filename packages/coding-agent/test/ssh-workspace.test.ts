@@ -286,7 +286,7 @@ describe("remote research filesystem", () => {
 		expect((await fs.list(".", { recursive: true })).map((entry) => entry.path)).toContain("notes/note.md");
 		await fs.copy("notes/note.md", "papers/copy.md");
 		await fs.move("papers/copy.md", "papers/moved.md");
-		expect(await workspace.readText("/work/research/papers/moved.md")).toBe("# hello\n");
+		expect(await workspace.readText("/work/research/workspace/papers/moved.md")).toBe("# hello\n");
 		expect(() => fs.resolvePath("../outside.txt")).toThrow(/outside the research workspace/);
 		expect(() => fs.resolvePath("/tmp/outside.txt")).toThrow(/outside the research workspace/);
 		await expect(fs.remove(".")).rejects.toThrow(/Refusing/);

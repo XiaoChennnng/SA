@@ -130,7 +130,6 @@ import {
 	SshWorkspace,
 	sshDisplay,
 } from "../../core/workspace/index.ts";
-import { resolveResearchSettings } from "../../research/settings.ts";
 import { getChangelogPath, getNewEntries, normalizeChangelogLinks, parseChangelog } from "../../utils/changelog.ts";
 import { copyToClipboard, readClipboardFilePaths, readClipboardText } from "../../utils/clipboard.ts";
 import { extensionForImageMimeType, readClipboardImage } from "../../utils/clipboard-image.ts";
@@ -5280,7 +5279,7 @@ export class InteractiveMode {
 		if (remotePath.trim()) draft.path = remotePath.trim();
 		const researchDir = await this.showExtensionInput(
 			"Remote research files directory",
-			draft.researchDir ?? "blank uses <workspace>/research",
+			draft.researchDir ?? "blank uses <workspace>/research/workspace",
 		);
 		if (researchDir === undefined) {
 			this.showSshMenu();
@@ -5532,7 +5531,7 @@ export class InteractiveMode {
 	}
 
 	private currentResearchSettings() {
-		return resolveResearchSettings(this.settingsManager.getResearchSettings());
+		return this.session.getResearchSettings();
 	}
 
 	private applyResearchSetting(fieldName: string, rawValue: string): void {
