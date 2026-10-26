@@ -1,9 +1,16 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { basename, isAbsolute, join, resolve as resolvePath } from "node:path";
 import type { AgentTool } from "@sa/agent-core";
 import { type Static, Type } from "typebox";
+import {
+	commandIsAvailable,
+	type PythonCommand,
+	pythonPrefixArgs,
+	resolvePythonCommand,
+} from "../../../research/runtime.ts";
 import type { ExtensionContext, ToolDefinition } from "../../extensions/types.ts";
+import type { ToolWorkspace } from "../../workspace/types.ts";
 import { wrapToolDefinition } from "../tool-definition-wrapper.ts";
 import { type ResearchToolOptions, researchSettingsFor, researchStoreFor } from "./shared.ts";
 
@@ -58,38 +65,37 @@ export const pythonRunToolSystemPromptContribution = {
 
 const MAX_OUTPUT = 40_000;
 
-interface PythonCommand {
-	command: string;
-	prefixArgs: string[];
-}
-
 function defaultIsAvailable(command: string, args: string[]): boolean {
-	const result = spawnSync(command, args, { stdio: "ignore", timeout: 5000 });
-	return !result.error && result.status === 0;
+	return commandIsAvailable(command, args);
 }
 
 function detectPython(
 	configured: string | undefined,
 	isAvailable: (command: string, args: string[]) => boolean,
 ): PythonCommand {
-	if (configured) {
-		const candidate = {
-			command: configured,
-			prefixArgs: basename(configured).toLowerCase().startsWith("py") ? ["-3"] : [],
-		};
-		if (!isAvailable(candidate.command, [...candidate.prefixArgs, "--version"])) {
-			throw new Error(`Configured Python is not available: ${configured}`);
-		}
-		return candidate;
+	const resolution = resolvePythonCommand(configured, isAvailable);
+	if (!resolution.command) throw new Error(resolution.error);
+	return resolution.command;
+}
+
+async function detectRemotePython(workspace: ToolWorkspace, configured?: string): Promise<PythonCommand> {
+	const candidates = configured
+		? [{ command: configured, prefixArgs: pythonPrefixArgs(configured) }]
+		: [
+				{ command: "python3", prefixArgs: [] },
+				{ command: "python", prefixArgs: [] },
+			];
+	for (const candidate of candidates) {
+		const result = await workspace.exec(candidate.command, [...candidate.prefixArgs, "--version"], {
+			timeoutMs: 10_000,
+		});
+		if (result.exitCode === 0) return candidate;
 	}
-	for (const candidate of [
-		{ command: "python3", prefixArgs: [] },
-		{ command: "python", prefixArgs: [] },
-		{ command: "py", prefixArgs: ["-3"] },
-	]) {
-		if (isAvailable(candidate.command, [...candidate.prefixArgs, "--version"])) return candidate;
-	}
-	throw new Error("No Python interpreter found. Install Python or set research.pythonPath in settings.json.");
+	throw new Error(
+		configured
+			? `Configured Python is not available on the remote host: ${configured}`
+			: "No Python interpreter found on the remote host. Install Python 3 or run /doctor.",
+	);
 }
 
 function defaultRun(
@@ -189,25 +195,63 @@ export function createPythonRunToolDefinition(
 				throw new Error("python_run accepts code or script, not both");
 			}
 			const settings = researchSettingsFor(options);
-			const workingDir = params.cwd ? resolvePath(ctx?.cwd ?? cwd, params.cwd) : (ctx?.cwd ?? cwd);
-			const python = detectPython(settings.pythonPath, isAvailable);
+			const toolWorkspace = ctx?.workspace;
+			const remote = toolWorkspace?.info.kind === "ssh";
+			const workingDir = params.cwd
+				? remote
+					? toolWorkspace!.resolvePath(params.cwd)
+					: resolvePath(ctx?.cwd ?? cwd, params.cwd)
+				: (toolWorkspace?.info.cwd ?? ctx?.cwd ?? cwd);
+			const python = remote
+				? await detectRemotePython(toolWorkspace!, settings.pythonPath)
+				: detectPython(settings.pythonPath, isAvailable);
 			let scriptPath: string;
 			if (params.script?.trim()) {
-				scriptPath = isAbsolute(params.script) ? params.script : resolvePath(workingDir, params.script);
+				scriptPath = remote
+					? toolWorkspace!.resolvePath(params.script)
+					: isAbsolute(params.script)
+						? params.script
+						: resolvePath(workingDir, params.script);
+			} else if (remote) {
+				const tempDir = `${toolWorkspace!.info.remote!.researchDir}/.tmp`;
+				await toolWorkspace!.mkdir(tempDir);
+				scriptPath = `${tempDir}/sa-python-${Date.now()}.py`;
+				await toolWorkspace!.writeFile(scriptPath, params.code!);
 			} else {
 				mkdirSync(settings.workDir, { recursive: true });
 				scriptPath = join(settings.workDir, `sa-python-${Date.now()}.py`);
 				writeFileSync(scriptPath, params.code!, "utf8");
 			}
 			const started = Date.now();
-			const result = await run(
-				python.command,
-				[...python.prefixArgs, scriptPath, ...(params.args ?? [])],
-				workingDir,
-				params.timeoutMs ?? 120_000,
-				params.env,
-				signal,
-			);
+			let result: { code: number | null; stdout: string; stderr: string; timedOut: boolean };
+			if (remote) {
+				const remoteResult = await toolWorkspace!.exec(
+					python.command,
+					[...python.prefixArgs, scriptPath, ...(params.args ?? [])],
+					{
+						cwd: workingDir,
+						env: params.env,
+						timeoutMs: params.timeoutMs ?? 120_000,
+						signal,
+					},
+				);
+				if (remoteResult.aborted) throw new Error("Operation aborted");
+				result = {
+					code: remoteResult.exitCode,
+					stdout: remoteResult.stdout,
+					stderr: remoteResult.stderr,
+					timedOut: remoteResult.timedOut,
+				};
+			} else {
+				result = await run(
+					python.command,
+					[...python.prefixArgs, scriptPath, ...(params.args ?? [])],
+					workingDir,
+					params.timeoutMs ?? 120_000,
+					params.env,
+					signal,
+				);
+			}
 			const durationMs = Date.now() - started;
 			if (signal?.aborted) throw new Error("Operation aborted");
 			let experimentId: string | undefined;

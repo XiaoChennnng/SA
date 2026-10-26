@@ -80,7 +80,11 @@ export function createLsToolDefinition(
 
 				(async () => {
 					try {
-						const dirPath = resolveToCwd(path || ".", ctx?.cwd || cwd);
+						const dirPath =
+							ctx?.workspace?.info.kind === "ssh"
+								? ctx.workspace.resolvePath(path || ".")
+								: resolveToCwd(path || ".", ctx?.cwd || cwd);
+						const pathModule = ctx?.workspace?.info.kind === "ssh" ? ctx.workspace.path : nodePath;
 						const effectiveLimit = limit ?? DEFAULT_LIMIT;
 
 						// Check if path exists.
@@ -117,7 +121,7 @@ export function createLsToolDefinition(
 								break;
 							}
 
-							const fullPath = nodePath.join(dirPath, entry);
+							const fullPath = pathModule.join(dirPath, entry);
 							let suffix = "";
 							try {
 								const entryStat = await ops.stat(fullPath);

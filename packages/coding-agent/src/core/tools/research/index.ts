@@ -39,6 +39,17 @@ export {
 	paperSearchToolSystemPromptContribution,
 } from "./paper-search.ts";
 export {
+	createPaperWriteTool,
+	createPaperWriteToolDefinition,
+	type PaperStyle,
+	type PaperWriteToolDetails,
+	type PaperWriteToolInput,
+	type PaperWriteToolOptions,
+	paperWriteToolSystemPromptContribution,
+	parsePaperFormatRequirements,
+	resolvePaperStyle,
+} from "./paper-write.ts";
+export {
 	createPythonRunTool,
 	createPythonRunToolDefinition,
 	type PythonRunToolDetails,
@@ -46,6 +57,14 @@ export {
 	type PythonRunToolOptions,
 	pythonRunToolSystemPromptContribution,
 } from "./python-run.ts";
+export {
+	createResearchFilesTool,
+	createResearchFilesToolDefinition,
+	type ResearchFilesToolDetails,
+	type ResearchFilesToolInput,
+	type ResearchFilesToolOptions,
+	researchFilesToolSystemPromptContribution,
+} from "./research-files.ts";
 export {
 	createResearchNoteTool,
 	createResearchNoteToolDefinition,

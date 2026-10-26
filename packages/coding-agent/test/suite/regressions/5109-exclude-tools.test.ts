@@ -51,6 +51,7 @@ describe("regression #5109: exclude tools", () => {
 			expect(allToolNames).toContain("bash");
 			expect(allToolNames).toContain("dynamic_tool");
 			expect(harness.session.getActiveToolNames().sort()).toEqual([
+				"ask_user",
 				"bash",
 				"citation",
 				"dynamic_tool",
@@ -59,7 +60,9 @@ describe("regression #5109: exclude tools", () => {
 				"latex_build",
 				"paper_read",
 				"paper_search",
+				"paper_write",
 				"python_run",
+				"research_files",
 				"research_note",
 				"web_extract",
 				"web_search",
@@ -105,8 +108,18 @@ describe("regression #5109: exclude tools", () => {
 			await harness.session.bindExtensions({});
 
 			// Patterns that match a tool activate it like its name.
-			expect(toolNames(harness.session.getAllTools())).toEqual(["dynamic_tool", "read", "research_note"]);
-			expect(harness.session.getActiveToolNames().sort()).toEqual(["dynamic_tool", "read", "research_note"]);
+			expect(toolNames(harness.session.getAllTools())).toEqual([
+				"dynamic_tool",
+				"read",
+				"research_files",
+				"research_note",
+			]);
+			expect(harness.session.getActiveToolNames().sort()).toEqual([
+				"dynamic_tool",
+				"read",
+				"research_files",
+				"research_note",
+			]);
 		} finally {
 			harness.cleanup();
 		}

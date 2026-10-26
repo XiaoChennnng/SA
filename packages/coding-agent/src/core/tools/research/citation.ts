@@ -112,7 +112,9 @@ export function createCitationToolDefinition(
 			_onUpdate,
 			ctx?: ExtensionContext,
 		) {
-			const workDir = ctx?.cwd ?? cwd;
+			const toolWorkspace = ctx?.workspace;
+			const remote = toolWorkspace?.info.kind === "ssh";
+			const workDir = toolWorkspace?.info.cwd ?? ctx?.cwd ?? cwd;
 			if (params.action === "add") {
 				if (!params.identifier?.trim()) throw new Error("citation add requires identifier");
 				const detected = detectPaperReference(params.identifier);
@@ -175,9 +177,16 @@ export function createCitationToolDefinition(
 			}
 			if (params.action === "export") {
 				const citations = store().listCitations();
-				const path = resolvePath(workDir, params.file ?? "references.bib");
-				mkdirSync(dirname(path), { recursive: true });
-				writeFileSync(path, formatBibtex(citations.map(citationToEntry)), "utf8");
+				const file = params.file ?? "references.bib";
+				const path = remote ? toolWorkspace!.resolvePath(file) : resolvePath(workDir, file);
+				const content = formatBibtex(citations.map(citationToEntry));
+				if (remote) {
+					await toolWorkspace!.mkdir(toolWorkspace!.path.dirname(path));
+					await toolWorkspace!.writeFile(path, content);
+				} else {
+					mkdirSync(dirname(path), { recursive: true });
+					writeFileSync(path, content, "utf8");
+				}
 				return {
 					content: [
 						{
@@ -190,9 +199,10 @@ export function createCitationToolDefinition(
 			}
 			if (params.action === "validate") {
 				if (!params.file?.trim()) throw new Error("citation validate requires file");
-				const path = resolvePath(workDir, params.file);
-				if (!existsSync(path)) throw new Error(`File not found: ${path}`);
-				const parsed = parseBibtex(readFileSync(path, "utf8"));
+				const path = remote ? toolWorkspace!.resolvePath(params.file) : resolvePath(workDir, params.file);
+				const fileExists = remote ? await toolWorkspace!.exists(path) : existsSync(path);
+				if (!fileExists) throw new Error(`File not found: ${path}`);
+				const parsed = parseBibtex(remote ? await toolWorkspace!.readText(path) : readFileSync(path, "utf8"));
 				const problems = validateBibtex(parsed);
 				const summary =
 					problems.length === 0

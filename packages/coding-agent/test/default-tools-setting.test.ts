@@ -64,6 +64,7 @@ describe("defaultTools setting", () => {
 				.map((tool) => tool.name)
 				.sort(),
 		).toEqual([
+			"ask_user",
 			"bash",
 			"citation",
 			"edit",
@@ -74,9 +75,11 @@ describe("defaultTools setting", () => {
 			"ls",
 			"paper_read",
 			"paper_search",
+			"paper_write",
 			"powershell",
 			"python_run",
 			"read",
+			"research_files",
 			"research_note",
 			"web_extract",
 			"web_search",
@@ -113,6 +116,7 @@ describe("defaultTools setting", () => {
 		]);
 
 		expect(session.getActiveToolNames().sort()).toEqual([
+			"ask_user",
 			"bash",
 			"citation",
 			"edit",
@@ -121,8 +125,10 @@ describe("defaultTools setting", () => {
 			"latex_build",
 			"paper_read",
 			"paper_search",
+			"paper_write",
 			"python_run",
 			"read",
+			"research_files",
 			"research_note",
 			"web_extract",
 			"web_search",
@@ -212,6 +218,7 @@ describe("defaultTools setting", () => {
 		const session = await createSession(["+grep"], { tools: ["+inactive_tool", "-write"] }, [inactiveTool]);
 		expect(session.getActiveToolNames().sort()).toEqual([
 			"active_tool",
+			"ask_user",
 			"bash",
 			"citation",
 			"edit",
@@ -221,8 +228,10 @@ describe("defaultTools setting", () => {
 			"latex_build",
 			"paper_read",
 			"paper_search",
+			"paper_write",
 			"python_run",
 			"read",
+			"research_files",
 			"research_note",
 			"web_extract",
 			"web_search",
@@ -289,6 +298,7 @@ describe("defaultTools setting", () => {
 				"bash",
 				"edit",
 				"write",
+				"ask_user",
 				"paper_search",
 				"paper_read",
 				"research_note",
@@ -299,6 +309,8 @@ describe("defaultTools setting", () => {
 				"web_search",
 				"web_extract",
 				"web_search_domains",
+				"paper_write",
+				"research_files",
 			]);
 			expect(session.systemPrompt).toContain("- paper_search:");
 			expect(session.systemPrompt).toContain("- experiment_log:");
@@ -346,6 +358,7 @@ describe("defaultTools setting", () => {
 			writeSettings({ defaultTools: ["+grep", "+inactive_tool"] });
 			await excluded.reload();
 			expect(excluded.getActiveToolNames().sort()).toEqual([
+				"ask_user",
 				"bash",
 				"citation",
 				"edit",
@@ -354,8 +367,10 @@ describe("defaultTools setting", () => {
 				"latex_build",
 				"paper_read",
 				"paper_search",
+				"paper_write",
 				"python_run",
 				"read",
+				"research_files",
 				"research_note",
 				"web_extract",
 				"web_search",
@@ -529,6 +544,7 @@ describe("defaultTools setting", () => {
 			const session = await resume(sessionManager);
 			expect(session.getActiveToolNames().sort()).toEqual([
 				"active_tool",
+				"ask_user",
 				"bash",
 				"citation",
 				"edit",
@@ -536,8 +552,10 @@ describe("defaultTools setting", () => {
 				"latex_build",
 				"paper_read",
 				"paper_search",
+				"paper_write",
 				"python_run",
 				"read",
+				"research_files",
 				"research_note",
 				"web_extract",
 				"web_search",
@@ -563,6 +581,7 @@ describe("defaultTools setting", () => {
 				.map((tool) => tool.name)
 				.sort(),
 		).toEqual([
+			"ask_user",
 			"bash",
 			"citation",
 			"edit",
@@ -573,9 +592,11 @@ describe("defaultTools setting", () => {
 			"ls",
 			"paper_read",
 			"paper_search",
+			"paper_write",
 			"powershell",
 			"python_run",
 			"read",
+			"research_files",
 			"research_note",
 			"web_extract",
 			"web_search",

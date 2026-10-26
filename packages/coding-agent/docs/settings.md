@@ -39,11 +39,11 @@ See [Choose a Model](models.md) for model selection and thinking controls.
 
 | Setting | Type | Default | Description |
 |---|---|---|---|
-| `defaultTools` | `string[]` | `read`, `bash`, `edit`, `write` | Tools enabled at startup. Plain names replace the defaults; `+name` adds a tool and `-name` removes one. An empty array disables all built-in tools but not extension or SDK tools. |
+| `defaultTools` | `string[]` | `read`, `bash`, `edit`, `write`, `ask_user`, and research tools | Tools enabled at startup. Plain names replace the defaults; `+name` adds a tool and `-name` removes one. An empty array disables all built-in tools but not extension or SDK tools. |
 | `codemode.mode` | `"on"` \| `"only"` | `"on"` | How the `codemode` tool presents tools while it is active. `on`: declared tools get a note on calling them from scripts appended to their description, and `codemode` lists only tools that are not declared. `only`: `codemode` lists every tool scripts can call, and active built-in and extension tools are hidden from the model, so it reaches them through `codemode`. |
 | `codemode.inlineBudget` | number | `3000` | Estimated tokens (characters / 4) the `codemode` tool's description may spend on tool declarations. Tools that do not fit are left out and found with `searchTools()`. `0` lists only namespaces. |
 
-Available built-in tools are `read`, `bash`, `powershell`, `edit`, `write`, `grep`, `find`, `ls`, `paper_search`, `paper_read`, `research_note`, `experiment_log`, `citation`, `latex_build`, `python_run`, `web_search`, `web_extract`, and `web_search_domains`. `defaultTools` can also name `codemode` and `tool_search`, which built-in extensions register inactive, and other extension tools registered inactive.
+Available built-in tools are `read`, `bash`, `powershell`, `edit`, `write`, `grep`, `find`, `ls`, `paper_search`, `paper_read`, `research_note`, `experiment_log`, `citation`, `latex_build`, `python_run`, `web_search`, `web_extract`, `web_search_domains`, `paper_write`, `research_files`, and `ask_user`. `defaultTools` can also name `codemode` and `tool_search`, which built-in extensions register inactive, and other extension tools registered inactive.
 
 A list of only `+name` and `-name` entries changes the inherited selection instead of replacing it. For example, this enables `codemode` next to the default tools:
 
@@ -179,11 +179,53 @@ Python tools. See [Research Workflow](research.md) for usage and system requirem
 | `databasePath` | string | `~/.sa/agent/research/research.db` | SQLite knowledge base |
 | `cacheDir` | string | `~/.sa/agent/research/cache` | PDF and extracted-text cache |
 | `workDir` | string | `~/.sa/agent/research/work` | Temporary scripts and outputs |
+| `workspaceDir` | string | `~/.sa/agent/research/workspace` | Research workspace for papers, notes, data, figures, and manuscripts |
 | `pdfCommand` | string | auto-detect | `pdftotext`, `mutool`, or Python with PyMuPDF |
 | `pythonPath` | string | auto-detect | Python executable for `python_run` |
 | `latexCommand` | string | auto-detect | LaTeX engine for `latex_build` |
 | `maxResults` | integer | `10` | Default search result count |
 | `requestTimeoutMs` | integer | `30000` | Per-request timeout |
+
+## SSH workspaces
+
+The `ssh` block stores named profiles for `/ssh`. Passwords and passphrases are not stored. Profiles
+are session-selectable; SA does not connect automatically on startup. See
+[SSH remote workspace](remote-workspace.md).
+
+```json
+{
+  "ssh": {
+    "profiles": {
+      "gpu-lab": {
+        "host": "gpu.example.edu",
+        "user": "alice",
+        "port": 22,
+        "identityFile": "~/.ssh/id_ed25519",
+        "auth": "key",
+        "path": "/data/project",
+        "researchDir": "/data/project/research"
+      }
+    },
+    "lastProfile": "gpu-lab"
+  }
+}
+```
+
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `profiles` | object | `{}` | Named SSH workspace profiles keyed by name. |
+| `profiles.<name>.host` | string | — | Host name or `~/.ssh/config` alias. |
+| `profiles.<name>.user` | string | ssh config | SSH user. |
+| `profiles.<name>.port` | integer | ssh config | SSH port. |
+| `profiles.<name>.identityFile` | string | ssh config/agent | Private key path. |
+| `profiles.<name>.auth` | `"key"` \| `"password"` | `"key"` | Authentication method. Password profiles prompt at connect time; passwords are not stored. |
+| `profiles.<name>.path` | string | remote home | Remote workspace directory. |
+| `profiles.<name>.researchDir` | string | `<path>/research` | Remote research-files directory. |
+| `lastProfile` | string | — | Last used profile, used for ordering and status only. |
+
+Use `/doctor` to check the active workspace (local or SSH) for missing tools. `research` paths
+(`databasePath`, `cacheDir`, `workDir`, `workspaceDir`) remain local even in SSH mode; remote
+research files use the profile's `researchDir`.
 
 ## Updates and warnings
 

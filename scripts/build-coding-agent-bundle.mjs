@@ -21,6 +21,9 @@ const allowedExternalPackages = new Set([
 	// Optional native accelerators. Their callers fall back to JavaScript when absent.
 	"bufferutil",
 	"utf-8-validate",
+	// Password-authenticated SSH client. Kept external so its optional native bindings
+	// and CommonJS-only helpers load through Node's normal module resolution.
+	"ssh2",
 	// Optional native proxy authentication. Its caller reports an install hint when absent.
 	"kerberos",
 	// Optional debug output coloring.
@@ -81,7 +84,7 @@ function commonBuildOptions() {
 		banner,
 		bundle: true,
 		define: { SA_BUNDLED_NODE: "true" },
-		external: ["@silvia-odwyer/photon-node"],
+		external: ["@silvia-odwyer/photon-node", "ssh2"],
 		format: "esm",
 		legalComments: "none",
 		logLevel: "warning",
@@ -106,12 +109,17 @@ function commonBuildOptions() {
 function validateExternalImports(metafiles) {
 	const unexpected = new Set();
 	for (const metafile of metafiles) {
-		for (const input of Object.values(metafile.inputs)) {
+		for (const [inputPath, input] of Object.entries(metafile.inputs)) {
 			for (const imported of input.imports) {
-				if (!imported.external || isBuiltin(imported.path) || allowedExternalPackages.has(imported.path)) {
+				if (
+					!imported.external ||
+					isBuiltin(imported.path) ||
+					imported.path.endsWith(".node") ||
+					allowedExternalPackages.has(imported.path)
+				) {
 					continue;
 				}
-				unexpected.add(imported.path);
+				unexpected.add(`${imported.path} (from ${inputPath}, kind ${imported.kind})`);
 			}
 		}
 	}

@@ -147,7 +147,7 @@ import {
 	normalizeBuildSystemPromptOptions,
 } from "./system-prompt.ts";
 import { type BashOperations, createLocalBashOperations } from "./tools/bash.ts";
-import { createAllToolDefinitions } from "./tools/index.ts";
+import { createAllToolDefinitions, type ToolsOptions } from "./tools/index.ts";
 import { createToolDefinitionFromAgentTool } from "./tools/tool-definition-wrapper.ts";
 import { addUsageToTotals, combineUsage, createUsageTotals } from "./usage-totals.ts";
 import {
@@ -158,6 +158,7 @@ import {
 	VIRTUAL_MODEL_STATE_ENTRY,
 	type VirtualModelStateData,
 } from "./virtual-models.ts";
+import { createLocalWorkspace, createRemoteToolOperations, type ToolWorkspace } from "./workspace/index.ts";
 
 // ============================================================================
 // Skill Block Parsing
@@ -438,6 +439,7 @@ export class AgentSession {
 	private _customTools: ToolDefinition[];
 	private _baseToolDefinitions: Map<string, ToolDefinition> = new Map();
 	private _cwd: string;
+	private _workspace: ToolWorkspace;
 	private _extensionRunnerRef?: { current?: ExtensionRunner };
 	private _initialActiveToolNames?: string[];
 	/**
@@ -491,6 +493,7 @@ export class AgentSession {
 		this._resourceLoader = config.resourceLoader;
 		this._customTools = config.customTools ?? [];
 		this._cwd = config.cwd;
+		this._workspace = createLocalWorkspace(config.cwd);
 		this._modelRuntime = config.modelRuntime;
 		this._cacheWarmer = config.cacheWarmer;
 		if (this._cacheWarmer) {
@@ -1735,6 +1738,7 @@ export class AgentSession {
 
 		this._baseSystemPromptOptions = normalizeBuildSystemPromptOptions({
 			cwd: this._cwd,
+			workspace: this._workspace.info,
 			skills: loadedSkills,
 			contextFiles: loadedContextFiles,
 			customPrompt: loaderSystemPrompt,
@@ -3525,6 +3529,7 @@ export class AgentSession {
 				},
 				getSystemPrompt: () => this.systemPrompt,
 				getSystemPromptOptions: () => this._baseSystemPromptOptions,
+				getWorkspace: () => this._workspace,
 				executeTool: (callerId, name, args, options) => this._executeNestedToolCall(callerId, name, args, options),
 				getCallableTools: () => this._getCallableTools(),
 			},
@@ -3664,30 +3669,70 @@ export class AgentSession {
 		return this._isDeclarable(name) && this._toolDefinitions.get(name)?.definition.defaultActive !== false;
 	}
 
+	private _createBaseToolDefinitions(): Record<string, ToolDefinition> {
+		if (this._baseToolsOverride) {
+			return Object.fromEntries(
+				Object.entries(this._baseToolsOverride).map(([name, tool]) => [
+					name,
+					createToolDefinitionFromAgentTool(tool),
+				]),
+			);
+		}
+		const autoResizeImages = this.settingsManager.getImageAutoResize();
+		const shellCommandPrefix = this.settingsManager.getShellCommandPrefix();
+		const shellPath = this.settingsManager.getShellPath();
+		const remote = createRemoteToolOperations(this._workspace);
+		const options: ToolsOptions = {
+			read: { autoResizeImages, ...(remote ? { operations: remote.read } : {}) },
+			bash: {
+				commandPrefix: shellCommandPrefix,
+				shellPath,
+				...(remote ? { operations: remote.bash } : {}),
+			},
+			...(remote
+				? {
+						write: { operations: remote.write },
+						edit: { operations: remote.edit },
+						ls: { operations: remote.ls },
+						find: { operations: remote.find },
+						grep: { operations: remote.grep },
+					}
+				: {}),
+			research: { getSettings: () => resolveResearchSettings(this.settingsManager.getResearchSettings()) },
+		};
+		return createAllToolDefinitions(this._cwd, options);
+	}
+
+	private _replaceBaseToolDefinitions(): void {
+		this._baseToolDefinitions = new Map(
+			Object.entries(this._createBaseToolDefinitions()).map(([name, tool]) => [name, tool as ToolDefinition]),
+		);
+	}
+
+	/** Current execution workspace for file and command tools. */
+	getWorkspace(): ToolWorkspace {
+		return this._workspace;
+	}
+
+	/** Switch the execution workspace (for example local to SSH). The session must be idle. */
+	async setWorkspace(workspace: ToolWorkspace): Promise<void> {
+		if (!this.isIdle) throw new Error("Wait for the current run to finish before switching the workspace");
+		if (workspace === this._workspace) return;
+		const previous = this._workspace;
+		this._workspace = workspace;
+		this._replaceBaseToolDefinitions();
+		this._refreshToolRegistry();
+		this._rebuildSystemPrompt(this.getActiveToolNames());
+		this._runSystemPromptOptions = undefined;
+		await previous.dispose?.();
+	}
+
 	private _buildRuntime(options: {
 		activeToolNames?: string[];
 		flagValues?: Map<string, boolean | string>;
 		includeAllExtensionTools?: boolean;
 	}): void {
-		const autoResizeImages = this.settingsManager.getImageAutoResize();
-		const shellCommandPrefix = this.settingsManager.getShellCommandPrefix();
-		const shellPath = this.settingsManager.getShellPath();
-		const baseToolDefinitions = this._baseToolsOverride
-			? Object.fromEntries(
-					Object.entries(this._baseToolsOverride).map(([name, tool]) => [
-						name,
-						createToolDefinitionFromAgentTool(tool),
-					]),
-				)
-			: createAllToolDefinitions(this._cwd, {
-					read: { autoResizeImages },
-					bash: { commandPrefix: shellCommandPrefix, shellPath },
-					research: { getSettings: () => resolveResearchSettings(this.settingsManager.getResearchSettings()) },
-				});
-
-		this._baseToolDefinitions = new Map(
-			Object.entries(baseToolDefinitions).map(([name, tool]) => [name, tool as ToolDefinition]),
-		);
+		this._replaceBaseToolDefinitions();
 
 		const extensionsResult = this._resourceLoader.getExtensions();
 		if (options.flagValues) {
@@ -3716,6 +3761,7 @@ export class AgentSession {
 					"bash",
 					"edit",
 					"write",
+					"ask_user",
 					"paper_search",
 					"paper_read",
 					"research_note",
@@ -3726,6 +3772,8 @@ export class AgentSession {
 					"web_search",
 					"web_extract",
 					"web_search_domains",
+					"paper_write",
+					"research_files",
 				];
 		const baseActiveToolNames = options.activeToolNames ?? defaultActiveToolNames;
 		this._refreshToolRegistry({

@@ -108,7 +108,11 @@ export function createFindToolDefinition(
 
 				(async () => {
 					try {
-						const searchPath = resolveToCwd(searchDir || ".", ctx?.cwd || cwd);
+						const searchPath =
+							ctx?.workspace?.info.kind === "ssh"
+								? ctx.workspace.resolvePath(searchDir || ".")
+								: resolveToCwd(searchDir || ".", ctx?.cwd || cwd);
+						const pathModule = ctx?.workspace?.info.kind === "ssh" ? ctx.workspace.path : path;
 						const effectiveLimit = limit ?? DEFAULT_LIMIT;
 						const ops = customOps ?? defaultFindOperations;
 
@@ -141,7 +145,7 @@ export function createFindToolDefinition(
 							}
 
 							// Relativize paths against the search root for stable output.
-							const relativized = results.map((p) => relativizeFindResultPath(p, searchPath));
+							const relativized = results.map((p) => relativizeFindResultPath(p, searchPath, pathModule));
 							const resultLimitReached = relativized.length >= effectiveLimit;
 							const rawOutput = relativized.join("\n");
 							const truncation = truncateHead(rawOutput, { maxLines: Number.MAX_SAFE_INTEGER });

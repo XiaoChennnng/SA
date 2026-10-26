@@ -1,4 +1,5 @@
-import { resolve as resolvePath } from "node:path";
+import { createHash } from "node:crypto";
+import { extname, join, resolve as resolvePath } from "node:path";
 import type { AgentTool } from "@sa/agent-core";
 import { type Static, Type } from "typebox";
 import { detectPaperReference } from "../../../research/identifiers.ts";
@@ -79,7 +80,24 @@ export function createPaperReadToolDefinition(
 			}
 			const settings = researchSettingsFor(options);
 			const detected = detectPaperReference(params.paper);
-			const reference = detected.kind === "path" ? resolvePath(_ctx?.cwd ?? _cwd, detected.value) : detected.value;
+			let reference = detected.value;
+			if (detected.kind === "path") {
+				const workspace = _ctx?.workspace;
+				if (workspace?.info.kind === "ssh") {
+					const remotePath = workspace.resolvePath(detected.value);
+					const stat = await workspace.stat(remotePath);
+					if (stat.isDirectory()) throw new Error(`Path is a directory: ${remotePath}`);
+					const extension = extname(remotePath) || ".pdf";
+					const key = createHash("sha256")
+						.update(`${workspace.info.display}\0${remotePath}\0${stat.size}\0${stat.mtimeMs}`)
+						.digest("hex");
+					const localPath = join(settings.cacheDir, "remote", `${key.slice(0, 32)}${extension}`);
+					await workspace.downloadToLocal(remotePath, localPath, signal);
+					reference = localPath;
+				} else {
+					reference = resolvePath(_ctx?.cwd ?? _cwd, detected.value);
+				}
+			}
 			const result = await load(reference, {
 				settings,
 				store: options?.store,

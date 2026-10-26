@@ -20,6 +20,8 @@ import type {
 	QuietStartup,
 	ResearchSettings,
 	Settings,
+	SshProfile,
+	SshSettings,
 	ThinkingBudgetsSettings,
 	TransportSetting,
 	TuiMode,
@@ -44,6 +46,8 @@ export type {
 	ResearchSettings,
 	RetrySettings,
 	Settings,
+	SshProfile,
+	SshSettings,
 	TerminalSettings,
 	ThinkingBudgetsSettings,
 	TransportSetting,
@@ -87,6 +91,7 @@ export const DEFAULT_TOOL_NAMES: readonly string[] = [
 	"bash",
 	"edit",
 	"write",
+	"ask_user",
 	"paper_search",
 	"paper_read",
 	"research_note",
@@ -97,6 +102,8 @@ export const DEFAULT_TOOL_NAMES: readonly string[] = [
 	"web_search",
 	"web_extract",
 	"web_search_domains",
+	"paper_write",
+	"research_files",
 ];
 
 /** Whether a tool selection entry is a `+name` or `-name` modifier. */
@@ -1319,6 +1326,53 @@ export class SettingsManager {
 			this.globalSettings.research = next as ResearchSettings;
 		}
 		this.markModified("research");
+		this.save();
+	}
+
+	getSshSettings(): SshSettings {
+		return { ...SETTINGS_DEFAULTS.ssh, ...(this.settings.ssh ?? {}) };
+	}
+
+	getSshProfiles(): Record<string, SshProfile> {
+		return { ...(this.getSshSettings().profiles ?? {}) };
+	}
+
+	getSshProfile(name: string): SshProfile | undefined {
+		return this.getSshProfiles()[name];
+	}
+
+	getLastSshProfile(): string | undefined {
+		return this.getSshSettings().lastProfile;
+	}
+
+	setSshProfile(name: string, profile: SshProfile): void {
+		const profiles = { ...(this.globalSettings.ssh?.profiles ?? {}), [name]: profile };
+		this.globalSettings.ssh = { ...(this.globalSettings.ssh ?? {}), profiles, lastProfile: name };
+		this.markModified("ssh");
+		this.save();
+	}
+
+	deleteSshProfile(name: string): void {
+		const profiles = { ...(this.globalSettings.ssh?.profiles ?? {}) };
+		delete profiles[name];
+		const next: SshSettings = { ...(this.globalSettings.ssh ?? {}), profiles };
+		if (next.lastProfile === name) delete next.lastProfile;
+		if (Object.keys(profiles).length === 0 && next.lastProfile === undefined) {
+			delete this.globalSettings.ssh;
+		} else {
+			this.globalSettings.ssh = next;
+		}
+		this.markModified("ssh");
+		this.save();
+	}
+
+	setLastSshProfile(name: string | undefined): void {
+		const next: SshSettings = { ...(this.globalSettings.ssh ?? {}) };
+		if (name) next.lastProfile = name;
+		else delete next.lastProfile;
+		if (Object.keys(next).length === 0) delete this.globalSettings.ssh;
+		else this.globalSettings.ssh = next;
+		this.markModified("ssh");
 		this.save();
 	}
 

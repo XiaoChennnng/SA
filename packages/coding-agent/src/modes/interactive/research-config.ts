@@ -105,6 +105,13 @@ export const RESEARCH_CONFIG_FIELDS: readonly ResearchConfigField[] = [
 		aliases: ["latex", "tex"],
 	},
 	{
+		id: "workspace-dir",
+		label: "Research workspace",
+		description: "Root for manuscripts, data, figures, and other files that research tools manage.",
+		settingKey: "workspaceDir",
+		aliases: ["workspace", "files"],
+	},
+	{
 		id: "database-path",
 		label: "Knowledge base path",
 		description: "SQLite file for papers, notes, experiments, and citations.",

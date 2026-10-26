@@ -50,11 +50,18 @@ SA ships with research tools enabled by default:
 - `paper_read` for open-access PDFs and abstracts, with page ranges and caching
 - `research_note` and `experiment_log` backed by a local SQLite knowledge base
 - `citation` for BibTeX import, validation, and export
-- `latex_build` and `python_run` for manuscripts and data analysis
+- `latex_build`, `paper_write`, and `python_run` for manuscripts and data analysis
+- `research_files` for organizing papers, notes, data, figures, and manuscripts in a research workspace
+- `ask_user` for clarifying ambiguous requirements through follow-up questions
 
 PDF text extraction uses `pdftotext`, `mutool`, or Python with PyMuPDF; LaTeX and Python use their
-system installations. Configure APIs and Chinese sources with `/research`. Everything is stored under `~/.sa/agent/research/` and is never uploaded.
-See [Research Workflow](packages/coding-agent/docs/research.md) for usage and settings.
+system installations. Configure APIs and Chinese sources with `/research`. Use `/doctor` to have SA
+inspect the current workspace for missing dependencies and install them in the conversation. Use
+`/ssh user@host:/path` to work in a remote Linux/macOS directory with the same tools, using a key,
+ssh-agent, or a masked password prompt. Local caches, the knowledge base, and settings live under
+`~/.sa/agent/research/`; files in a remote workspace stay on that server.
+See [Research Workflow](packages/coding-agent/docs/research.md) and
+[SSH remote workspace](packages/coding-agent/docs/remote-workspace.md) for usage and settings.
 
 ## Packages
 

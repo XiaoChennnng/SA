@@ -51,6 +51,7 @@ describe("system prompt updates", () => {
 				"bash",
 				"edit",
 				"write",
+				"ask_user",
 				"paper_search",
 				"paper_read",
 				"research_note",
@@ -61,6 +62,8 @@ describe("system prompt updates", () => {
 				"web_search",
 				"web_extract",
 				"web_search_domains",
+				"paper_write",
+				"research_files",
 			]);
 			expect(getSystemMessageText(head)).toBe(harness.session.systemPrompt);
 		} finally {

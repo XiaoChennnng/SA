@@ -26,6 +26,7 @@ import {
 } from "./settings-manager.ts";
 import { time } from "./timings.ts";
 import {
+	createAskUserTool,
 	createBashTool,
 	createCitationTool,
 	createCodingTools,
@@ -37,10 +38,12 @@ import {
 	createLsTool,
 	createPaperReadTool,
 	createPaperSearchTool,
+	createPaperWriteTool,
 	createPowerShellTool,
 	createPythonRunTool,
 	createReadOnlyTools,
 	createReadTool,
+	createResearchFilesTool,
 	createResearchNoteTool,
 	createWebExtractTool,
 	createWebSearchDomainsTool,
@@ -147,6 +150,7 @@ export {
 	// Tool factories (for custom cwd)
 	createCodingTools,
 	createReadOnlyTools,
+	createAskUserTool,
 	createReadTool,
 	createBashTool,
 	createEditTool,
@@ -166,6 +170,8 @@ export {
 	createWebSearchTool,
 	createWebExtractTool,
 	createWebSearchDomainsTool,
+	createPaperWriteTool,
+	createResearchFilesTool,
 };
 
 // Helper Functions

@@ -23,6 +23,16 @@ export const BUILTIN_SLASH_COMMANDS: ReadonlyArray<BuiltinSlashCommand> = [
 		description: "Configure research and web APIs, Chinese sources, and tool commands",
 		argumentHint: "[status|set <field> <value>|clear <field>]",
 	},
+	{
+		name: "doctor",
+		description: "Ask SA to check tool dependencies for the current local or SSH workspace",
+		argumentHint: "[quick|network]",
+	},
+	{
+		name: "ssh",
+		description: "Use a remote folder over SSH as the workspace",
+		argumentHint: "[user@host:/path|password user@host:/path|status|use <profile>|save <name>|disconnect]",
+	},
 	{ name: "model", description: "Select model (opens selector UI)", argumentHint: "<provider/model>" },
 	{ name: "tree", description: "Navigate session tree (switch branches)" },
 	{ name: "thinking", description: "Set thinking level", argumentHint: "<level>" },

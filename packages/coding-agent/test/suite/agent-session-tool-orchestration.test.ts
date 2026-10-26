@@ -124,6 +124,7 @@ describe("AgentSession tool orchestration", () => {
 			"bash",
 			"edit",
 			"write",
+			"ask_user",
 			"paper_search",
 			"paper_read",
 			"research_note",
@@ -134,6 +135,8 @@ describe("AgentSession tool orchestration", () => {
 			"web_search",
 			"web_extract",
 			"web_search_domains",
+			"paper_write",
+			"research_files",
 		]);
 
 		// --tools and the defaultTools setting name them explicitly.

@@ -55,6 +55,10 @@
           "type": "string",
           "description": "Directory for temporary scripts and generated files."
         },
+        "workspaceDir": {
+          "type": "string",
+          "description": "Research workspace for manuscripts, data, figures, and other managed files."
+        },
         "pdfCommand": {
           "type": "string",
           "description": "PDF text extractor: pdftotext, mutool, or a Python executable with PyMuPDF."
@@ -77,6 +81,69 @@
           "type": "integer",
           "minimum": 1000,
           "default": 30000
+        }
+      }
+    },
+    "ssh": {
+      "type": "object",
+      "properties": {
+        "profiles": {
+          "type": "object",
+          "patternProperties": {
+            "^.*$": {
+              "type": "object",
+              "required": [
+                "host"
+              ],
+              "properties": {
+                "host": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Host name or ~/.ssh/config alias."
+                },
+                "user": {
+                  "type": "string",
+                  "description": "SSH user."
+                },
+                "port": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 65535,
+                  "description": "SSH port."
+                },
+                "identityFile": {
+                  "type": "string",
+                  "description": "Private key path; uses ssh config/agent when omitted."
+                },
+                "auth": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "const": "key"
+                    },
+                    {
+                      "type": "string",
+                      "const": "password"
+                    }
+                  ],
+                  "description": "Authentication method. Password profiles prompt at connect time; passwords are not stored."
+                },
+                "path": {
+                  "type": "string",
+                  "description": "Remote workspace directory; defaults to the remote home."
+                },
+                "researchDir": {
+                  "type": "string",
+                  "description": "Remote research files directory; defaults to <path>/research."
+                }
+              }
+            }
+          },
+          "description": "Named SSH workspace profiles. Passwords and passphrases are never stored."
+        },
+        "lastProfile": {
+          "type": "string",
+          "description": "Last used SSH profile."
         }
       }
     },

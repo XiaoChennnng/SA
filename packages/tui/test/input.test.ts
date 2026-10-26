@@ -35,6 +35,14 @@ describe("Input component", () => {
 	});
 
 	describe("render", () => {
+		it("masks typed characters while preserving the submitted value", () => {
+			const input = new Input({ prompt: "", mask: true });
+			for (const character of "secret") input.handleInput(character);
+			const [line] = input.render(20);
+			assert.strictEqual(stripTerminalSequences(line ?? "").trimEnd(), "******");
+			assert.strictEqual(input.getValue(), "secret");
+		});
+
 		it("supports a custom prompt and styled placeholder", () => {
 			const input = new Input({
 				prompt: "",

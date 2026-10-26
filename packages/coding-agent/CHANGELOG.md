@@ -8,6 +8,11 @@
 - Added `/research` to configure research APIs and sources interactively or with `/research set <field> <value>`. Chinese literature search now supports Wanfang through its official open platform and CNKI/NSTL through user-configured authorized commands; configured sources join default searches automatically.
 - Added Europe PMC, OpenAIRE, DOAJ, HAL, and CORE (with a key) as literature search sources, and Unpaywall as the first open-access PDF resolver for DOI reads.
 - Added AnySearch-powered `web_search`, `web_extract`, and `web_search_domains` tools. The `/research` menu now shows clickable API signup links for every configurable API.
+- Added `paper_write`, which typesets Markdown into a polished PDF with Python/reportlab when LaTeX is unavailable, and maps explicit formatting requirements into page size, margins, fonts, spacing, numbering, and column layout.
+- Added the built-in `ask_user` tool so SA can ask focused clarifying questions with options or free text, and keep asking until requirements are clear.
+- Added `research_files` and a configurable research workspace (`research.workspaceDir`), so agents can create folders and manage papers, notes, data, figures, experiments, and manuscripts.
+- Added `/doctor`: SA inspects the active local or SSH workspace, reports missing tools with install suggestions, and can install them in the conversation. `/doctor quick` runs the built-in detector without an extra model turn.
+- Added `/ssh`: use a remote Linux or macOS directory over SSH as the workspace. File tools, bash, Python, LaTeX, paper writing, and research files run remotely, while search, notes, and caches stay local. Connections are session-scoped and can be saved as named profiles. Supports key/ssh-agent and password authentication (masked prompt, session-memory only), with host-key verification and no forwarding by default.
 - Device-code login (for example GitHub Copilot) now opens the verification page and copies the code when you press Enter. Providers can turn either action off with `openBrowserOnConfirm: false` or `copyCodeOnConfirm: false` ([#9282](https://github.com/earendil-works/pi/issues/9282), [#9301](https://github.com/earendil-works/pi/pull/9301))
 
 ### Changed

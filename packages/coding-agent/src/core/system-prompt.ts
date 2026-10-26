@@ -5,6 +5,7 @@
 import { getSystemMessageText } from "@sa/ai";
 import { getDocsPath, getExamplesPath, getReadmePath } from "../config.ts";
 import { formatSkillsForPrompt, type Skill } from "./skills.ts";
+import type { WorkspaceInfo } from "./workspace/types.ts";
 
 export interface BuildSystemPromptOptions {
 	/** Custom system prompt (replaces the default prefix). */
@@ -30,6 +31,8 @@ export interface BuildSystemPromptOptions {
 	sections?: Record<string, string>;
 	/** Working directory. */
 	cwd: string;
+	/** Execution workspace when it differs from the local session directory. */
+	workspace?: WorkspaceInfo;
 	/** Pre-loaded context files. */
 	contextFiles?: Array<{ path: string; content: string }>;
 	/** Pre-loaded skills. */
@@ -67,6 +70,7 @@ export function normalizeBuildSystemPromptOptions(input: BuildSystemPromptOption
 				"bash",
 				"edit",
 				"write",
+				"ask_user",
 				"paper_search",
 				"paper_read",
 				"research_note",
@@ -77,6 +81,8 @@ export function normalizeBuildSystemPromptOptions(input: BuildSystemPromptOption
 				"web_search",
 				"web_extract",
 				"web_search_domains",
+				"paper_write",
+				"research_files",
 			]),
 		],
 		hiddenTools: [...(input.hiddenTools ?? [])],
@@ -88,6 +94,7 @@ export function normalizeBuildSystemPromptOptions(input: BuildSystemPromptOption
 		appendSystemPrompt: input.appendSystemPrompt ?? "",
 		sections: { ...(input.sections ?? {}) },
 		cwd: input.cwd,
+		workspace: input.workspace,
 		contextFiles: (input.contextFiles ?? []).map((file) => ({ ...file })),
 		skills: (input.skills ?? []).map((skill) => ({ ...skill })),
 	};
@@ -160,6 +167,7 @@ export function buildSystemPromptSections(input: BuildSystemPromptOptions): Syst
 		appendSystemPrompt,
 		sections: customSections,
 		cwd,
+		workspace,
 		contextFiles,
 		skills,
 	} = options;
@@ -193,6 +201,14 @@ export function buildSystemPromptSections(input: BuildSystemPromptOptions): Syst
 	}
 
 	if (appendSystemPrompt) promptSections.addendum = appendSystemPrompt;
+	if (workspace?.kind === "ssh") {
+		promptSections.workspace = [
+			`Remote SSH workspace: ${workspace.display} (POSIX paths).`,
+			"All file, shell, Python, LaTeX, paper-writing, and research-file tools execute on this remote host; relative paths resolve inside the remote workspace.",
+			"Literature search, the note and experiment knowledge base, and paper caches stay on the local SA host.",
+			"The <cwd> section is the local session directory used for SA configuration; use remote POSIX paths for tool arguments.",
+		].join(" ");
+	}
 	if (contextFiles.length > 0) promptSections.project_context = renderProjectContext(contextFiles);
 	// A hidden reader is still reachable through another tool, so skills stay but the hint names no tool.
 	const readers = ["read", "bash"] as const;

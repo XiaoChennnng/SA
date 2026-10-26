@@ -203,6 +203,31 @@ const SkillsInputSchema = Type.Union(
 	{ description: "Local skill file paths or directories." },
 );
 
+const SshProfileSchema = Type.Object({
+	host: Type.String({ minLength: 1, description: "Host name or ~/.ssh/config alias." }),
+	user: Type.Optional(Type.String({ description: "SSH user." })),
+	port: Type.Optional(Type.Integer({ minimum: 1, maximum: 65535, description: "SSH port." })),
+	identityFile: Type.Optional(Type.String({ description: "Private key path; uses ssh config/agent when omitted." })),
+	auth: Type.Optional(
+		Type.Union([Type.Literal("key"), Type.Literal("password")], {
+			description: "Authentication method. Password profiles prompt at connect time; passwords are not stored.",
+		}),
+	),
+	path: Type.Optional(Type.String({ description: "Remote workspace directory; defaults to the remote home." })),
+	researchDir: Type.Optional(
+		Type.String({ description: "Remote research files directory; defaults to <path>/research." }),
+	),
+});
+
+const SshSettingsSchema = Type.Object({
+	profiles: Type.Optional(
+		Type.Record(Type.String(), SshProfileSchema, {
+			description: "Named SSH workspace profiles. Passwords and passphrases are never stored.",
+		}),
+	),
+	lastProfile: Type.Optional(Type.String({ description: "Last used SSH profile." })),
+});
+
 const ResearchSettingsSchema = Type.Object({
 	mailto: Type.Optional(
 		Type.String({ description: "Contact email sent to OpenAlex and PubMed as requested by their APIs." }),
@@ -237,6 +262,9 @@ const ResearchSettingsSchema = Type.Object({
 	),
 	cacheDir: Type.Optional(Type.String({ description: "Directory for downloaded papers and extracted text." })),
 	workDir: Type.Optional(Type.String({ description: "Directory for temporary scripts and generated files." })),
+	workspaceDir: Type.Optional(
+		Type.String({ description: "Research workspace for manuscripts, data, figures, and other managed files." }),
+	),
 	pdfCommand: Type.Optional(
 		Type.String({ description: "PDF text extractor: pdftotext, mutool, or a Python executable with PyMuPDF." }),
 	),
@@ -252,6 +280,7 @@ export const SettingsSchema = Type.Object(
 	{
 		$schema: Type.Optional(Type.String({ description: "JSON Schema reference." })),
 		research: Type.Optional(ResearchSettingsSchema),
+		ssh: Type.Optional(SshSettingsSchema),
 		lastChangelogVersion: Type.Optional(Type.String()),
 		defaultProvider: Type.Optional(Type.String()),
 		defaultModel: Type.Optional(Type.String()),
@@ -500,6 +529,8 @@ export type MermaidRenderingMode = NonNullable<Static<typeof MarkdownSettingsSch
 export interface MarkdownSettings extends Static<typeof MarkdownSettingsSchema> {}
 export interface WarningSettings extends Static<typeof WarningSettingsSchema> {}
 export interface ResearchSettings extends Static<typeof ResearchSettingsSchema> {}
+export interface SshProfile extends Static<typeof SshProfileSchema> {}
+export interface SshSettings extends Static<typeof SshSettingsSchema> {}
 export type CodemodeMode = Static<typeof CodemodeModeSchema>;
 export interface CodemodeSettings extends Static<typeof CodemodeSettingsSchema> {}
 export type DefaultProjectTrust = NonNullable<SettingsInput["defaultProjectTrust"]>;

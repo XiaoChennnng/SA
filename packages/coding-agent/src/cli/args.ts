@@ -466,6 +466,7 @@ ${chalk.bold("Environment Variables:")}
 
 ${chalk.bold("Built-in Tool Names:")}
   read       - Read file contents
+  ask_user   - Ask the user clarifying questions
   bash       - Execute bash commands
   powershell - Execute PowerShell commands on Windows
   edit       - Edit files with find/replace
@@ -483,5 +484,7 @@ ${chalk.bold("Built-in Tool Names:")}
   web_search     - Search the web through AnySearch
   web_extract    - Read a web page through AnySearch
   web_search_domains - List AnySearch domains and parameters
+  paper_write    - Typeset Markdown into a PDF with Python (reportlab)
+  research_files - Manage files and folders in the research workspace
 `);
 }

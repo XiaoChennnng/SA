@@ -1,8 +1,10 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { basename, dirname, extname, isAbsolute, join, resolve as resolvePath } from "node:path";
+import * as path from "node:path";
+import { isAbsolute, resolve as resolvePath } from "node:path";
 import type { AgentTool } from "@sa/agent-core";
 import { type Static, Type } from "typebox";
+import { probeCommandSync } from "../../../research/runtime.ts";
 import type { ExtensionContext, ToolDefinition } from "../../extensions/types.ts";
 import { wrapToolDefinition } from "../tool-definition-wrapper.ts";
 import { type ResearchToolOptions, researchSettingsFor } from "./shared.ts";
@@ -57,8 +59,7 @@ export const latexBuildToolSystemPromptContribution = {
 } as const;
 
 function defaultIsAvailable(command: string): boolean {
-	const result = spawnSync(command, ["--version"], { stdio: "ignore", timeout: 5000 });
-	return !result.error && result.status === 0;
+	return probeCommandSync(command, ["--version"]).ok;
 }
 
 function runCommand(
@@ -134,24 +135,41 @@ export function createLatexBuildToolDefinition(
 			ctx?: ExtensionContext,
 		) {
 			const settings = researchSettingsFor(options);
-			const workDir = ctx?.cwd ?? cwd;
-			const texPath = isAbsolute(params.path) ? params.path : resolvePath(workDir, params.path);
-			if (!existsSync(texPath)) throw new Error(`LaTeX file not found: ${texPath}`);
-			if (extname(texPath).toLowerCase() !== ".tex") throw new Error(`Not a .tex file: ${texPath}`);
-			const texDir = dirname(texPath);
-			const basenameNoExt = basename(texPath, extname(texPath));
-			const outputDir = params.outputDir ? resolvePath(workDir, params.outputDir) : texDir;
+			const toolWorkspace = ctx?.workspace;
+			const remote = toolWorkspace?.info.kind === "ssh";
+			const pathModule = remote ? toolWorkspace!.path : path;
+			const workDir = toolWorkspace?.info.cwd ?? ctx?.cwd ?? cwd;
+			const texPath =
+				remote && toolWorkspace
+					? toolWorkspace.resolvePath(params.path)
+					: isAbsolute(params.path)
+						? params.path
+						: resolvePath(workDir, params.path);
+			const texExists = remote ? await toolWorkspace!.exists(texPath) : existsSync(texPath);
+			if (!texExists) throw new Error(`LaTeX file not found: ${texPath}`);
+			if (pathModule.extname(texPath).toLowerCase() !== ".tex") throw new Error(`Not a .tex file: ${texPath}`);
+			const texDir = pathModule.dirname(texPath);
+			const basenameNoExt = pathModule.basename(texPath, pathModule.extname(texPath));
+			const outputDir = params.outputDir
+				? remote
+					? toolWorkspace!.resolvePath(params.outputDir)
+					: resolvePath(workDir, params.outputDir)
+				: texDir;
 			const requested =
 				params.engine ??
 				(["latexmk", "pdflatex", "xelatex", "lualatex"].includes(settings.latexCommand ?? "")
 					? settings.latexCommand!
 					: "latexmk");
+			const available = async (command: string): Promise<boolean> =>
+				remote
+					? (await toolWorkspace!.exec(command, ["--version"], { timeoutMs: 15_000 })).exitCode === 0
+					: isAvailable(command);
 			let engine = requested;
-			if (requested === "latexmk" && !isAvailable("latexmk")) {
-				if (isAvailable("pdflatex")) engine = "pdflatex";
+			if (requested === "latexmk" && !(await available("latexmk"))) {
+				if (await available("pdflatex")) engine = "pdflatex";
 				else {
 					throw new Error(
-						"No LaTeX engine is available. Install TeX Live/MiKTeX (latexmk, pdflatex, xelatex, or lualatex) or set research.latexCommand.",
+						"No LaTeX engine is available. Install TeX Live/MiKTeX (latexmk, pdflatex, xelatex, or lualatex), set research.latexCommand, or run /doctor.",
 					);
 				}
 			}
@@ -159,7 +177,7 @@ export function createLatexBuildToolDefinition(
 				settings.latexCommand && !["latexmk", "pdflatex", "xelatex", "lualatex"].includes(settings.latexCommand)
 					? settings.latexCommand
 					: engine;
-			if (!isAvailable(command)) throw new Error(`LaTeX command is not available: ${command}`);
+			if (!(await available(command))) throw new Error(`LaTeX command is not available: ${command}`);
 			const outputArgs = outputDir === texDir ? [] : [`-output-directory=${outputDir}`];
 			const args =
 				engine === "latexmk"
@@ -169,11 +187,27 @@ export function createLatexBuildToolDefinition(
 							"-halt-on-error",
 							"-file-line-error",
 							"-pdf",
-							basename(texPath),
+							pathModule.basename(texPath),
 						]
-					: [...outputArgs, "-interaction=nonstopmode", "-halt-on-error", "-file-line-error", basename(texPath)];
+					: [
+							...outputArgs,
+							"-interaction=nonstopmode",
+							"-halt-on-error",
+							"-file-line-error",
+							pathModule.basename(texPath),
+						];
 			const timeoutMs = params.timeoutMs ?? 180_000;
-			const first = await run(command, args, texDir, timeoutMs, signal);
+			const execute = async (cmd: string, cmdArgs: string[]): Promise<CommandResult> => {
+				if (!remote) return run(cmd, cmdArgs, texDir, timeoutMs, signal);
+				const result = await toolWorkspace!.exec(cmd, cmdArgs, { cwd: texDir, timeoutMs, signal });
+				if (result.aborted) throw new Error("Operation aborted");
+				return {
+					code: result.exitCode,
+					output: `${result.stdout}${result.stderr}`,
+					timedOut: result.timedOut,
+				};
+			};
+			const first = await execute(command, args);
 			let output = first.output;
 			if (signal?.aborted) throw new Error("Operation aborted");
 			if (first.timedOut) {
@@ -191,12 +225,13 @@ export function createLatexBuildToolDefinition(
 				};
 			}
 			if (first.code === 0 && /Rerun to get|There were undefined references/i.test(output)) {
-				const second = await run(command, args, texDir, timeoutMs, signal);
+				const second = await execute(command, args);
 				output = `${output}\n${second.output}`;
 			}
 			const diagnostics = parseDiagnostics(output);
-			const pdfPath = join(outputDir, `${basenameNoExt}.pdf`);
-			const success = first.code === 0 && existsSync(pdfPath);
+			const pdfPath = pathModule.join(outputDir, `${basenameNoExt}.pdf`);
+			const pdfExists = remote ? await toolWorkspace!.exists(pdfPath) : existsSync(pdfPath);
+			const success = first.code === 0 && pdfExists;
 			const logTail = output.split(/\r?\n/).slice(-80).join("\n");
 			const lines = [
 				success ? `LaTeX build succeeded with ${engine}.` : `LaTeX build failed with ${engine}.`,

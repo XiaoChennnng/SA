@@ -22,6 +22,7 @@ export interface ResearchSettingsInput {
 	databasePath?: string;
 	cacheDir?: string;
 	workDir?: string;
+	workspaceDir?: string;
 	maxResults?: number;
 	requestTimeoutMs?: number;
 }
@@ -49,6 +50,7 @@ export function resolveResearchSettings(input: ResearchSettingsInput = {}): Rese
 		databasePath: resolvePath(input.databasePath, join(researchRoot, "research.db")),
 		cacheDir: resolvePath(input.cacheDir, join(researchRoot, "cache")),
 		workDir: resolvePath(input.workDir, join(researchRoot, "work")),
+		workspaceDir: resolvePath(input.workspaceDir, join(researchRoot, "workspace")),
 		maxResults: Math.min(50, Math.max(1, Math.round(input.maxResults ?? RESEARCH_DEFAULTS.maxResults))),
 		requestTimeoutMs: Math.max(1000, Math.round(input.requestTimeoutMs ?? RESEARCH_DEFAULTS.requestTimeoutMs)),
 	};

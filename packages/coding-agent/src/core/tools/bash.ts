@@ -266,9 +266,10 @@ export function createShellToolDefinition(
 			ctx?: ExtensionContext,
 		) {
 			const resolvedCommand = commandPrefix ? `${commandPrefix}\n${command}` : command;
+			const executionCwd = ctx?.workspace?.info.kind === "ssh" ? ctx.workspace.info.cwd : ctx?.cwd || cwd;
 			const spawnContext = resolveSpawnContext(
 				resolvedCommand,
-				ctx?.cwd || cwd,
+				executionCwd,
 				spawnHook,
 				exposeSessionEnvironment,
 				ctx,

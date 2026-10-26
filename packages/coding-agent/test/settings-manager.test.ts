@@ -652,6 +652,7 @@ describe("SettingsManager", () => {
 				"read",
 				"bash",
 				"edit",
+				"ask_user",
 				"paper_search",
 				"paper_read",
 				"research_note",
@@ -662,6 +663,8 @@ describe("SettingsManager", () => {
 				"web_search",
 				"web_extract",
 				"web_search_domains",
+				"paper_write",
+				"research_files",
 				"codemode",
 			]);
 			expect(SettingsManager.inMemory({ defaultTools: ["read", "+grep", "+read"] }).getDefaultTools()).toEqual([
@@ -695,6 +698,7 @@ describe("SettingsManager", () => {
 				"bash",
 				"edit",
 				"write",
+				"ask_user",
 				"paper_search",
 				"paper_read",
 				"research_note",
@@ -705,6 +709,8 @@ describe("SettingsManager", () => {
 				"web_search",
 				"web_extract",
 				"web_search_domains",
+				"paper_write",
+				"research_files",
 				"codemode",
 			]);
 		});

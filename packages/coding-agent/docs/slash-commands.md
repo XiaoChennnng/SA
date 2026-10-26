@@ -9,7 +9,7 @@ Extensions, prompt templates, and skills can add commands. The command menu in S
 | Command | Description |
 |---|---|
 | `/settings` | Open settings |
-| `/research [status\|set <field> <value>\|clear <field>]` | Configure research and web APIs, Chinese sources, and tool commands; API fields link to their key pages |
+| `/research [status\|set <field> <value>\|clear <field>]` | Configure research and web APIs, Chinese sources, workspace path, and tool commands; API fields link to their key pages |
 | `/model [provider/model]` | Select a model |
 | `/thinking [level]` | Set the thinking level |
 | `/scoped-models` | Configure the models used by interactive cycling |
@@ -40,6 +40,13 @@ Extensions, prompt templates, and skills can add commands. The command menu in S
 | `/bug [description]` | Write a local bug report archive |
 
 Review a session before exporting it. Sessions can contain prompts, tool arguments, command output, file contents, and credentials exposed during the conversation.
+
+## Workspace and diagnostics
+
+| Command | Description |
+|---|---|
+| `/doctor [quick\|network]` | Ask SA to inspect the current local or SSH workspace and report missing dependencies. `quick` runs the built-in detector without an extra model turn; `network` also checks API reachability |
+| `/ssh [user@host:/path\|password user@host:/path\|use <profile>\|status\|test\|disconnect]` | Use a remote Linux/macOS directory over SSH as the workspace. Supports key/agent and masked password prompts. See [SSH remote workspace](remote-workspace.md) |
 
 ## Runtime and project
 

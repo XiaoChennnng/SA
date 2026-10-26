@@ -1,6 +1,9 @@
+import { LocalResearchFs, RemoteResearchFs, type ResearchFs } from "../../../research/research-fs.ts";
 import { resolveResearchSettings } from "../../../research/settings.ts";
 import { getResearchStore, type ResearchStore } from "../../../research/store.ts";
 import type { Paper, ResearchSettings } from "../../../research/types.ts";
+import { ResearchWorkspace } from "../../../research/workspace.ts";
+import type { ExtensionContext } from "../../extensions/types.ts";
 
 export interface ResearchToolOptions {
 	settings?: ResearchSettings;
@@ -15,6 +18,23 @@ export function researchSettingsFor(options?: Partial<ResearchToolOptions>): Res
 
 export function researchStoreFor(options?: Partial<ResearchToolOptions>, settings?: ResearchSettings): ResearchStore {
 	return options?.store ?? getResearchStore((settings ?? researchSettingsFor(options)).databasePath);
+}
+
+export function researchWorkspaceFor(
+	options?: Partial<ResearchToolOptions>,
+	settings?: ResearchSettings,
+): ResearchWorkspace {
+	return new ResearchWorkspace((settings ?? researchSettingsFor(options)).workspaceDir);
+}
+
+/** Local research workspace, or the remote research directory when an SSH workspace is active. */
+export function researchFsFor(
+	options?: Partial<ResearchToolOptions>,
+	settings?: ResearchSettings,
+	ctx?: ExtensionContext,
+): ResearchFs {
+	if (ctx?.workspace?.info.kind === "ssh") return new RemoteResearchFs(ctx.workspace);
+	return new LocalResearchFs(researchWorkspaceFor(options, settings));
 }
 
 export function formatAuthors(authors: string[], max = 4): string {

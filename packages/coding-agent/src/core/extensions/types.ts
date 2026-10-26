@@ -116,6 +116,8 @@ export interface ExtensionUIDialogOptions {
 	signal?: AbortSignal;
 	/** Timeout in milliseconds. Dialog auto-dismisses with live countdown display. */
 	timeout?: number;
+	/** Render typed characters as `*` (for password prompts). */
+	mask?: boolean;
 }
 
 /** Placement for extension widgets. */
@@ -331,6 +333,8 @@ export interface ExtensionContext {
 	hasUI: boolean;
 	/** Current working directory */
 	cwd: string;
+	/** Execution workspace for file and command tools (local or SSH). */
+	readonly workspace?: import("../workspace/types.ts").ToolWorkspace;
 	/** Session manager (read-only) */
 	sessionManager: ReadonlySessionManager;
 	/** Model registry for API key resolution */
@@ -2225,6 +2229,8 @@ export interface ExtensionContextActions {
 	compact: (options?: CompactOptions) => void;
 	getSystemPrompt: () => string;
 	getSystemPromptOptions?: () => BuildSystemPromptOptions;
+	/** Current execution workspace; undefined when the session does not provide one. */
+	getWorkspace?: () => import("../workspace/types.ts").ToolWorkspace | undefined;
 	/** Backs `ExtensionToolContext.executeTool()`. Without it, nested calls fail. */
 	executeTool?: (
 		callerId: string,

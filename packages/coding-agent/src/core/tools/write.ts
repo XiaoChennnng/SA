@@ -62,8 +62,10 @@ export function createWriteToolDefinition(
 			_onUpdate?,
 			ctx?: ExtensionContext,
 		) {
-			const absolutePath = resolveToCwd(path, ctx?.cwd || cwd);
-			const dir = dirname(absolutePath);
+			const absolutePath =
+				ctx?.workspace?.info.kind === "ssh" ? ctx.workspace.resolvePath(path) : resolveToCwd(path, ctx?.cwd || cwd);
+			const dir =
+				ctx?.workspace?.info.kind === "ssh" ? ctx.workspace.path.dirname(absolutePath) : dirname(absolutePath);
 			return withFileMutationQueue(absolutePath, async () => {
 				// Do not reject from an abort event listener here: that would release the
 				// mutation queue while an in-flight filesystem operation may still finish.

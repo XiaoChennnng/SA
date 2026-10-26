@@ -77,6 +77,11 @@ import {
 import { formatCacheWarmingStatus, formatCacheWarmingUsage } from "../../core/cache-warmer.ts";
 import { findExtensionStackMatches, recordCrash, takeUnnotifiedCrash } from "../../core/crash-log.ts";
 import { DEFAULT_THINKING_LEVEL, THINKING_LEVEL_OPTIONS } from "../../core/defaults.ts";
+import { collectDoctorReport } from "../../core/doctor/checks.ts";
+import { buildDoctorInstallPrompt, formatDoctorInstallCommands, formatDoctorReport } from "../../core/doctor/format.ts";
+import { createLocalDoctorEnvironment } from "../../core/doctor/local-env.ts";
+import { createRemoteDoctorEnvironment } from "../../core/doctor/remote-env.ts";
+import type { DoctorReport } from "../../core/doctor/types.ts";
 import type {
 	AutocompleteProviderFactory,
 	EditorFactory,
@@ -117,13 +122,21 @@ import { withBuiltInRenderers } from "../../core/tools/renderers/index.ts";
 import type { TruncationResult } from "../../core/tools/truncate.ts";
 import { hasTrustRequiringProjectResources, ProjectTrustStore } from "../../core/trust-manager.ts";
 import { getUsageCostBreakdown } from "../../core/usage-totals.ts";
+import {
+	createLocalWorkspace,
+	ensureRemoteDirectory,
+	probeSshTarget,
+	type SshProbe,
+	SshWorkspace,
+	sshDisplay,
+} from "../../core/workspace/index.ts";
 import { resolveResearchSettings } from "../../research/settings.ts";
 import { getChangelogPath, getNewEntries, normalizeChangelogLinks, parseChangelog } from "../../utils/changelog.ts";
 import { copyToClipboard, readClipboardFilePaths, readClipboardText } from "../../utils/clipboard.ts";
 import { extensionForImageMimeType, readClipboardImage } from "../../utils/clipboard-image.ts";
 import { parseGitUrl } from "../../utils/git.ts";
 import { ensurePngTranscoder } from "../../utils/image-convert.ts";
-import { getCwdRelativePath } from "../../utils/paths.ts";
+import { getCwdRelativePath, resolvePath as resolveLocalPath } from "../../utils/paths.ts";
 import { killTrackedDetachedChildren } from "../../utils/shell.ts";
 import { loadAllHighlightLanguages } from "../../utils/syntax-highlight.ts";
 import { ensureTool, type ToolStatus } from "../../utils/tools-manager.ts";
@@ -184,6 +197,16 @@ import {
 	RESEARCH_CONFIG_FIELDS,
 	type ResearchConfigField,
 } from "./research-config.ts";
+import {
+	draftFromProfile,
+	formatSshProfiles,
+	formatSshStatus,
+	formatSshTarget,
+	parseSshTarget,
+	profileFromDraft,
+	type SshDraft,
+	validateProfileName,
+} from "./ssh-config.ts";
 import {
 	getAvailableThemes,
 	getAvailableThemesWithPaths,
@@ -470,6 +493,8 @@ export class InteractiveMode {
 	private footer: FooterComponent;
 	private footerContainer: Container;
 	private footerDataProvider: FooterDataProvider;
+	/** Passwords are kept in session memory only; they are never written to settings. */
+	private readonly sshPasswords = new Map<string, string>();
 	// Stored so the same manager can be injected into custom editors, selectors, and extension UI.
 	private keybindings: KeybindingsManager;
 	private version: string;
@@ -2064,6 +2089,7 @@ export class InteractiveMode {
 		this.unsubscribe = undefined;
 		this.programStatus.reset();
 		this.applyRuntimeSettings();
+		if (typeof this.refreshWorkspaceStatus === "function") this.refreshWorkspaceStatus();
 
 		if (options.renderBeforeBind) {
 			this.renderCurrentSessionState();
@@ -2768,7 +2794,7 @@ export class InteractiveMode {
 				placeholder,
 				(value) => finish(value),
 				() => finish(undefined),
-				{ tui: this.ui, timeout: opts?.timeout },
+				{ tui: this.ui, timeout: opts?.timeout, mask: opts?.mask },
 			);
 			this.pushExtensionDialog(input, { kind: "question", message: title });
 		});
@@ -3130,6 +3156,16 @@ export class InteractiveMode {
 			if (text === "/research" || text.startsWith("/research ")) {
 				this.editor.setText("");
 				await this.handleResearchCommand(text.slice("/research".length).trim());
+				return;
+			}
+			if (text === "/doctor" || text.startsWith("/doctor ")) {
+				this.editor.setText("");
+				await this.handleDoctorCommand(text.slice("/doctor".length).trim());
+				return;
+			}
+			if (text === "/ssh" || text.startsWith("/ssh ")) {
+				this.editor.setText("");
+				await this.handleSshCommand(text.slice("/ssh".length).trim());
 				return;
 			}
 			if (text === "/settings") {
@@ -4834,6 +4870,638 @@ export class InteractiveMode {
 		this.ui.requestRender();
 	}
 
+	private async handleDoctorCommand(args: string): Promise<void> {
+		const parts = args.split(/\s+/).filter(Boolean);
+		if (parts.includes("quick") || parts.includes("network")) {
+			await this.runDoctorQuick(parts.includes("network"));
+			return;
+		}
+		await this.startDoctorAiCheck();
+	}
+
+	private async startDoctorAiCheck(): Promise<void> {
+		const workspace = this.session.getWorkspace();
+		const remote = workspace.info.kind === "ssh" ? workspace.info.remote : undefined;
+		const target = remote ? `SSH 远端工作区 ${workspace.info.display}` : `本地工作区 ${workspace.info.cwd}`;
+		const checks =
+			workspace.info.kind === "ssh"
+				? [
+						"远端 OS/架构、登录 shell、工作区是否可写、磁盘剩余空间",
+						"bash/sh、coreutils（cat/ls/mkdir/rm/mv/cp/test/find/grep）、git、rg、fd",
+						"python3/python 版本，以及 reportlab、pypdf、PyMuPDF 是否可导入",
+						"latexmk/pdflatex/xelatex/lualatex 是否可用",
+						"CJK 字体（fc-list :lang=zh 或常见字体文件）、nvidia-smi 与 GPU 信息（若存在）",
+						"远端是否能访问包管理器（apt/dnf/yum/pacman/apk/brew）",
+					]
+				: [
+						"Node.js 版本（>=22.19）、npm、git、bash",
+						"rg、fd（缺失时说明 SA 会自动下载）",
+						"python3/python 版本，以及 reportlab、pypdf、PyMuPDF 是否可导入",
+						"PDF 提取器 pdftotext 或 mutool",
+						"latexmk/pdflatex/xelatex/lualatex 是否可用",
+						"ssh 客户端与 ssh-keygen",
+						"SA agent 目录、research 数据库/cache/work/workspace 目录是否可写",
+						"文献/网页 API 的配置项是否已设置（只报告是否设置，绝不输出密钥值）",
+					];
+		const prompt = [
+			`请对当前工作区做一次完整的环境自检，并用中文汇报。当前工作区：${target}。`,
+			"",
+			"请实际运行命令确认，不要凭猜测；使用当前可用的 bash（远端工作区时命令会在远端执行）：",
+			...checks.map((check, index) => `${index + 1}. ${check}`),
+			"",
+			"输出要求：",
+			"- 按“✓ 可用 / ✗ 缺失 / ! 需要注意（可选或信息项）”分组列出结果，并写出探测到的版本或路径。",
+			"- 每个缺失项说明它影响哪些工具（如 paper_read、paper_write、python_run、latex_build、grep、find、/ssh）。",
+			"- 给出针对当前 OS/包管理器的安装建议；优先用户级安装，避免不必要的 sudo。",
+			"- 最后按优先级列出最需要先处理的 1-3 项。",
+			"- 先只检查和汇报，不要安装任何东西。等我确认要安装后再执行；如果必须先输入密码或交互式 sudo，请停下来给我手动命令。",
+			"- 不要伪造命令输出或安装结果。",
+		].join("\n");
+		this.showStatus("SA is checking the current workspace environment...");
+		try {
+			if (this.session.isStreaming) {
+				await this.session.prompt(prompt, { streamingBehavior: "followUp" });
+			} else {
+				await this.session.prompt(prompt);
+			}
+		} catch (error) {
+			this.showError(
+				`Could not start the environment check: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+	}
+
+	private async runDoctorQuick(includeNetwork: boolean): Promise<void> {
+		const workspace = this.session.getWorkspace();
+		this.showStatus(`Running SA Doctor quick checks for ${workspace.info.display}...`);
+		try {
+			const report = await collectDoctorReport({
+				env:
+					workspace.info.kind === "ssh"
+						? createRemoteDoctorEnvironment(workspace)
+						: createLocalDoctorEnvironment(this.sessionManager.getCwd()),
+				settings: this.currentResearchSettings(),
+				npmCommand: workspace.info.kind === "ssh" ? undefined : this.settingsManager.getNpmCommand(),
+				includeNetwork,
+			});
+			this.showStatus(formatDoctorReport(report));
+			this.showDoctorMenu(report, includeNetwork);
+		} catch (error) {
+			this.showError(`SA Doctor failed: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+
+	private showDoctorMenu(report: DoctorReport, includeNetwork: boolean): void {
+		this.showSelector((done) => {
+			const options = [
+				"让 SA 安装缺失项",
+				"重新检查",
+				"查看安装命令",
+				includeNetwork ? "关闭网络检查" : "检查网络连通性",
+				"完成",
+			];
+			const selector = new ExtensionSelectorComponent(
+				"SA Doctor",
+				options,
+				(option) => {
+					done();
+					if (option === "让 SA 安装缺失项") {
+						void this.startDoctorInstall(report);
+						return;
+					}
+					if (option === "重新检查") {
+						void this.runDoctorQuick(includeNetwork);
+						return;
+					}
+					if (option === "查看安装命令") {
+						this.showStatus(formatDoctorInstallCommands(report));
+						this.showDoctorMenu(report, includeNetwork);
+						return;
+					}
+					if (option === "检查网络连通性") {
+						void this.runDoctorQuick(true);
+						return;
+					}
+					if (option === "关闭网络检查") {
+						void this.runDoctorQuick(false);
+					}
+				},
+				() => done(),
+			);
+			return { component: selector, focus: selector };
+		});
+	}
+
+	private async startDoctorInstall(report: DoctorReport): Promise<void> {
+		const items = [...report.missing, ...report.warnings];
+		if (items.length === 0) {
+			this.showStatus("No missing dependencies to install.");
+			return;
+		}
+		const prompt = buildDoctorInstallPrompt(report);
+		try {
+			if (this.session.isStreaming) {
+				await this.session.prompt(prompt, { streamingBehavior: "followUp" });
+			} else {
+				await this.session.prompt(prompt);
+			}
+		} catch (error) {
+			this.showError(
+				`Could not start the installation turn: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+	}
+
+	private async handleSshCommand(args: string): Promise<void> {
+		const [subcommand = "", ...rest] = args.split(/\s+/).filter(Boolean);
+		if (!subcommand) {
+			this.showSshMenu();
+			return;
+		}
+		if (subcommand === "status") {
+			this.showStatus(formatSshStatus(this.session.getWorkspace().info));
+			return;
+		}
+		if (subcommand === "profiles") {
+			this.showStatus(
+				formatSshProfiles(this.settingsManager.getSshProfiles(), this.settingsManager.getLastSshProfile()),
+			);
+			return;
+		}
+		if (subcommand === "use") {
+			const name = rest.join(" ").trim();
+			if (!name) {
+				this.showError("Usage: /ssh use <profile>");
+				return;
+			}
+			const profile = this.settingsManager.getSshProfile(name);
+			if (!profile) {
+				this.showError(`Unknown SSH profile "${name}". Use /ssh profiles to list saved profiles.`);
+				return;
+			}
+			await this.connectSsh(draftFromProfile(profile), name);
+			return;
+		}
+		if (subcommand === "save") {
+			const name = rest.join(" ").trim();
+			if (!name) {
+				this.showError("Usage: /ssh save <name> (connect first)");
+				return;
+			}
+			await this.saveActiveSshProfile(name);
+			return;
+		}
+		if (subcommand === "delete") {
+			const name = rest.join(" ").trim();
+			if (!name) {
+				this.showError("Usage: /ssh delete <profile>");
+				return;
+			}
+			if (!this.settingsManager.getSshProfile(name)) {
+				this.showError(`Unknown SSH profile "${name}".`);
+				return;
+			}
+			const confirmed = await this.showExtensionConfirm(
+				`Delete SSH profile "${name}"?`,
+				"This only removes the saved profile.",
+			);
+			if (!confirmed) return;
+			this.settingsManager.deleteSshProfile(name);
+			this.showStatus(`Deleted SSH profile "${name}".`);
+			return;
+		}
+		if (subcommand === "disconnect") {
+			await this.disconnectSsh();
+			return;
+		}
+		if (subcommand === "password") {
+			const targetText = rest.join(" ");
+			if (!targetText) {
+				this.showError("Usage: /ssh password user@host:/path");
+				return;
+			}
+			try {
+				const draft = parseSshTarget(targetText);
+				draft.auth = "password";
+				await this.connectSsh(draft);
+			} catch (error) {
+				this.showError(error instanceof Error ? error.message : String(error));
+			}
+			return;
+		}
+		if (subcommand === "test") {
+			await this.testActiveSsh();
+			return;
+		}
+		if (subcommand === "help") {
+			this.showStatus(
+				[
+					"/ssh — open the SSH workspace menu",
+					"/ssh user@host:/path — connect using a key/ssh-agent",
+					"/ssh password user@host:/path — connect with a password prompt",
+					"/ssh status — show the active workspace",
+					"/ssh use <profile> — connect a saved profile",
+					"/ssh save <name> — save the active target as a profile",
+					"/ssh profiles — list profiles",
+					"/ssh delete <name> — delete a profile",
+					"/ssh test — test the active connection",
+					"/ssh disconnect — return to the local workspace",
+				].join("\n"),
+			);
+			return;
+		}
+		try {
+			const draft = parseSshTarget(args);
+			await this.connectSsh(draft);
+		} catch (error) {
+			this.showError(error instanceof Error ? error.message : String(error));
+		}
+	}
+
+	private showSshMenu(): void {
+		this.showSelector((done) => {
+			const workspace = this.session.getWorkspace().info;
+			const options = [
+				workspace.kind === "ssh" ? "Switch SSH workspace..." : "Connect to a server...",
+				"Use a saved profile...",
+				"Status",
+				"Test current connection",
+				"Manage saved profiles",
+				"Disconnect",
+				"Done",
+			];
+			const selector = new ExtensionSelectorComponent(
+				"SSH workspace",
+				options,
+				(option) => {
+					done();
+					if (option.startsWith("Connect") || option.startsWith("Switch")) {
+						void this.showSshWizard();
+						return;
+					}
+					if (option === "Use a saved profile...") {
+						this.showSshProfilePicker("connect");
+						return;
+					}
+					if (option === "Status") {
+						this.showStatus(formatSshStatus(workspace));
+						this.showSshMenu();
+						return;
+					}
+					if (option === "Test current connection") {
+						void this.testActiveSsh();
+						return;
+					}
+					if (option === "Manage saved profiles") {
+						this.showSshProfilePicker("manage");
+						return;
+					}
+					if (option === "Disconnect") {
+						void this.disconnectSsh();
+					}
+				},
+				() => done(),
+			);
+			return { component: selector, focus: selector };
+		});
+	}
+
+	private showSshProfilePicker(mode: "connect" | "manage"): void {
+		const profiles = this.settingsManager.getSshProfiles();
+		const names = Object.keys(profiles).sort();
+		if (names.length === 0) {
+			this.showStatus("No saved SSH profiles. Connect with /ssh first.");
+			this.showSshMenu();
+			return;
+		}
+		this.showSelector((done) => {
+			const last = this.settingsManager.getLastSshProfile();
+			const options = names.map((name) => {
+				const marker = name === last ? " (last used)" : "";
+				return `${name}${marker}: ${formatSshTarget(draftFromProfile(profiles[name]!))}`;
+			});
+			options.push("Cancel");
+			const selector = new ExtensionSelectorComponent(
+				mode === "connect" ? "Saved SSH profiles" : "Manage SSH profiles",
+				options,
+				(option) => {
+					done();
+					if (option === "Cancel") {
+						this.showSshMenu();
+						return;
+					}
+					const index = options.indexOf(option);
+					const name = names[index];
+					if (!name) return;
+					if (mode === "connect") {
+						void this.connectSsh(draftFromProfile(profiles[name]!), name);
+						return;
+					}
+					void (async () => {
+						const confirmed = await this.showExtensionConfirm(
+							`Delete SSH profile "${name}"?`,
+							"This only removes the saved profile.",
+						);
+						if (confirmed) {
+							this.settingsManager.deleteSshProfile(name);
+							this.showStatus(`Deleted SSH profile "${name}".`);
+						}
+						this.showSshProfilePicker("manage");
+					})();
+				},
+				() => done(),
+			);
+			return { component: selector, focus: selector };
+		});
+	}
+
+	private async showSshWizard(): Promise<void> {
+		const host = await this.showExtensionInput("SSH host", "user@host, ssh alias, or user@host:/remote/path");
+		if (host === undefined) {
+			this.showSshMenu();
+			return;
+		}
+		let draft: SshDraft;
+		try {
+			draft = parseSshTarget(host);
+		} catch (error) {
+			this.showError(error instanceof Error ? error.message : String(error));
+			this.showSshMenu();
+			return;
+		}
+		const port = await this.showExtensionInput("SSH port (optional)", draft.port ? String(draft.port) : "22");
+		if (port === undefined) {
+			this.showSshMenu();
+			return;
+		}
+		if (port.trim()) {
+			const value = Number.parseInt(port.trim(), 10);
+			if (!Number.isFinite(value) || value < 1 || value > 65535) {
+				this.showError("SSH port must be an integer between 1 and 65535.");
+				this.showSshMenu();
+				return;
+			}
+			draft.port = value;
+		}
+		const auth = await this.showExtensionSelector("SSH authentication", ["Key or ssh-agent", "Password"]);
+		if (auth === undefined) {
+			this.showSshMenu();
+			return;
+		}
+		let password: string | undefined;
+		if (auth === "Password") {
+			draft.auth = "password";
+			draft.identityFile = undefined;
+			password = await this.sshPasswordFor(draft);
+			if (password === undefined) {
+				this.showSshMenu();
+				return;
+			}
+		} else {
+			draft.auth = "key";
+			const identity = await this.showExtensionInput(
+				"Identity file (optional)",
+				"blank uses ssh config or ssh-agent",
+			);
+			if (identity === undefined) {
+				this.showSshMenu();
+				return;
+			}
+			draft.identityFile = identity.trim() || undefined;
+		}
+		const remotePath = await this.showExtensionInput(
+			"Remote workspace path",
+			draft.path ?? "blank uses the remote home directory",
+		);
+		if (remotePath === undefined) {
+			this.showSshMenu();
+			return;
+		}
+		if (remotePath.trim()) draft.path = remotePath.trim();
+		const researchDir = await this.showExtensionInput(
+			"Remote research files directory",
+			draft.researchDir ?? "blank uses <workspace>/research",
+		);
+		if (researchDir === undefined) {
+			this.showSshMenu();
+			return;
+		}
+		draft.researchDir = researchDir.trim() || undefined;
+		void this.connectSsh(draft, undefined, password);
+	}
+
+	private sshPasswordKey(target: { host: string; user?: string; port?: number }): string {
+		return `${target.user ?? ""}@${target.host.toLowerCase()}:${target.port ?? 22}`;
+	}
+
+	private async sshPasswordFor(target: SshDraft): Promise<string | undefined> {
+		const key = this.sshPasswordKey(target);
+		const cached = this.sshPasswords.get(key);
+		if (cached !== undefined) return cached;
+		const password = await this.showExtensionInput(`SSH password for ${formatSshTarget(target)}`, "password", {
+			mask: true,
+		});
+		if (password === undefined) return undefined;
+		if (!password) {
+			this.showError("SSH password cannot be empty.");
+			return undefined;
+		}
+		this.sshPasswords.set(key, password);
+		return password;
+	}
+
+	private async connectSsh(draft: SshDraft, profileName?: string, password?: string): Promise<void> {
+		if (!this.session.isIdle) {
+			this.showError("Wait for the current run to finish before switching to an SSH workspace.");
+			return;
+		}
+		const auth = draft.auth ?? "key";
+		let passwordValue = password;
+		if (auth === "password" && passwordValue === undefined) {
+			passwordValue = await this.sshPasswordFor(draft);
+			if (passwordValue === undefined) return;
+		}
+		const identityFile =
+			auth === "key" && draft.identityFile
+				? resolveLocalPath(draft.identityFile, this.sessionManager.getCwd())
+				: undefined;
+		this.showStatus(`Connecting to ${formatSshTarget(draft)}...`);
+		let probe: SshProbe | undefined;
+		let activated = false;
+		try {
+			probe = await probeSshTarget(
+				{
+					host: draft.host,
+					user: draft.user,
+					port: draft.port,
+					identityFile,
+				},
+				{
+					path: draft.path,
+					researchDir: draft.researchDir,
+					...(auth === "password" ? { password: passwordValue } : {}),
+				},
+			);
+			if (passwordValue !== undefined) {
+				this.sshPasswords.set(
+					this.sshPasswordKey({ host: probe.info.host, user: probe.info.user, port: probe.info.port }),
+					passwordValue,
+				);
+			}
+			if (!probe.pathExists) {
+				const create = await this.showExtensionConfirm(
+					"Create remote directory?",
+					`${probe.info.workspacePath} does not exist on ${draft.host}. Create it?`,
+				);
+				if (!create) {
+					await probe.transport.dispose?.();
+					this.showSshMenu();
+					return;
+				}
+				await ensureRemoteDirectory(probe.transport, probe.info.workspacePath);
+			} else if (!probe.pathWritable) {
+				throw new Error(`Remote workspace directory is not writable: ${probe.info.workspacePath}`);
+			}
+			const workspace = new SshWorkspace(probe.info, probe.transport);
+			await workspace.access(workspace.info.cwd, "rw");
+			await this.session.setWorkspace(workspace);
+			activated = true;
+			this.setExtensionStatus("ssh", `SSH ${sshDisplay(probe.info, probe.info.workspacePath)}`);
+			const tools = probe.tools;
+			const details = [
+				`Connected: ${workspace.info.display}`,
+				`Platform: ${probe.info.platform}/${probe.info.arch}; home: ${probe.info.home}`,
+				`Research files: ${probe.info.researchDir}`,
+				`Python: ${tools.python ?? "not found"}`,
+				`rg/fd: ${tools.rg ?? "no rg"} / ${tools.fd ?? "no fd"}`,
+				tools.nvidia ? `GPU: ${tools.nvidia}` : "GPU: nvidia-smi not found",
+				"Remote file, shell, Python, LaTeX and paper tools are now active. Run /doctor to check remote dependencies.",
+			].join("\n");
+			this.showStatus(details);
+			if (profileName) {
+				this.settingsManager.setLastSshProfile(profileName);
+			} else {
+				const save = await this.showExtensionConfirm(
+					"Save SSH profile?",
+					"Save this host and path for /ssh use <name>?",
+				);
+				if (save) {
+					const name = await this.showExtensionInput("Profile name", "e.g. gpu-lab");
+					if (name?.trim()) {
+						try {
+							this.settingsManager.setSshProfile(validateProfileName(name), profileFromDraft(draft));
+							this.showStatus(`Saved SSH profile "${name.trim()}".`);
+						} catch (error) {
+							this.showError(error instanceof Error ? error.message : String(error));
+						}
+					}
+				}
+			}
+		} catch (error) {
+			if (passwordValue !== undefined) this.sshPasswords.delete(this.sshPasswordKey(draft));
+			if (!activated) await probe?.transport.dispose?.();
+			this.showError(
+				`${activated ? "SSH workspace activated, but setup did not finish" : "SSH connection failed"}: ${
+					error instanceof Error ? error.message : String(error)
+				}`,
+			);
+		}
+	}
+
+	private async saveActiveSshProfile(name: string): Promise<void> {
+		const workspace = this.session.getWorkspace().info;
+		if (workspace.kind !== "ssh" || !workspace.remote) {
+			this.showError("Connect to an SSH workspace before saving a profile.");
+			return;
+		}
+		const remote = workspace.remote;
+		const profileName = validateProfileName(name);
+		if (this.settingsManager.getSshProfile(profileName)) {
+			const overwrite = await this.showExtensionConfirm(
+				`Overwrite SSH profile "${profileName}"?`,
+				"The saved host and path will be replaced.",
+			);
+			if (!overwrite) return;
+		}
+		this.settingsManager.setSshProfile(profileName, {
+			host: remote.host,
+			...(remote.user ? { user: remote.user } : {}),
+			...(remote.port ? { port: remote.port } : {}),
+			...(remote.identityFile ? { identityFile: remote.identityFile } : {}),
+			auth: remote.auth ?? "key",
+			path: remote.workspacePath,
+			researchDir: remote.researchDir,
+		});
+		this.showStatus(`Saved SSH profile "${profileName}".`);
+	}
+
+	private async testActiveSsh(): Promise<void> {
+		const workspace = this.session.getWorkspace().info;
+		if (workspace.kind !== "ssh" || !workspace.remote) {
+			this.showStatus("The active workspace is local. Use /ssh to connect to a server.");
+			this.showSshMenu();
+			return;
+		}
+		const remote = workspace.remote;
+		const password =
+			remote.auth === "password"
+				? await this.sshPasswordFor({ host: remote.host, user: remote.user, port: remote.port })
+				: undefined;
+		if (remote.auth === "password" && password === undefined) {
+			this.showSshMenu();
+			return;
+		}
+		this.showStatus(`Testing ${workspace.display}...`);
+		try {
+			const probe = await probeSshTarget(
+				{
+					host: remote.host,
+					user: remote.user,
+					port: remote.port,
+					identityFile: remote.auth === "password" ? undefined : remote.identityFile,
+				},
+				{
+					path: remote.workspacePath,
+					researchDir: remote.researchDir,
+					...(password !== undefined ? { password } : {}),
+				},
+			);
+			const details = [
+				`SSH test OK: ${workspace.display}`,
+				`Platform: ${probe.info.platform}/${probe.info.arch}; home: ${probe.info.home}; shell: ${probe.info.loginShell}`,
+				`Workspace: ${probe.pathExists ? "exists" : "missing"}, ${probe.pathWritable ? "writable" : "not writable"}`,
+				`Python: ${probe.tools.python ?? "not found"}`,
+				`rg/fd: ${probe.tools.rg ?? "no rg"} / ${probe.tools.fd ?? "no fd"}`,
+				`Git: ${probe.tools.git ?? "not found"}`,
+				probe.tools.nvidia ? `GPU: ${probe.tools.nvidia}` : "GPU: nvidia-smi not found",
+			].join("\n");
+			this.showStatus(details);
+			this.showSshMenu();
+		} catch (error) {
+			if (password !== undefined) this.sshPasswords.delete(this.sshPasswordKey(remote));
+			this.showError(`SSH test failed: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+
+	private async disconnectSsh(): Promise<void> {
+		if (this.session.getWorkspace().info.kind !== "ssh") {
+			this.showStatus("The active workspace is already local.");
+			return;
+		}
+		const confirmed = await this.showExtensionConfirm(
+			"Disconnect SSH workspace?",
+			"Tools will return to the local session directory.",
+		);
+		if (!confirmed) return;
+		try {
+			await this.session.setWorkspace(createLocalWorkspace(this.sessionManager.getCwd()));
+			this.setExtensionStatus("ssh", undefined);
+			this.showStatus(`Switched back to local workspace: ${this.sessionManager.getCwd()}`);
+		} catch (error) {
+			this.showError(`Could not disconnect: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+
 	private async handleResearchCommand(args: string): Promise<void> {
 		const [subcommand = "", ...rest] = args.split(/\s+/).filter(Boolean);
 		if (!subcommand) {
@@ -6373,6 +7041,16 @@ export class InteractiveMode {
 	// Command handlers
 	// =========================================================================
 
+	private refreshWorkspaceStatus(): void {
+		const getWorkspace = this.session.getWorkspace?.bind(this.session);
+		if (!getWorkspace) {
+			this.setExtensionStatus("ssh", undefined);
+			return;
+		}
+		const info = getWorkspace().info;
+		this.setExtensionStatus("ssh", info.kind === "ssh" ? `SSH ${info.display}` : undefined);
+	}
+
 	private async handleReloadCommand(): Promise<void> {
 		if (this.session.isStreaming) {
 			this.showWarning("Wait for the current response to finish before reloading.");
@@ -6435,6 +7113,7 @@ export class InteractiveMode {
 			}
 			setRegisteredThemes(this.session.resourceLoader.getThemes().themes);
 			this.applyRuntimeSettings();
+			this.refreshWorkspaceStatus();
 			this.themeController.applyFromSettings();
 			this.setupAutocompleteProvider();
 			const runner = this.session.extensionRunner;

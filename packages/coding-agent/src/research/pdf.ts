@@ -1,7 +1,8 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { researchFetchBytes } from "./http.ts";
+import { probeCommandSync, pythonPrefixArgs } from "./runtime.ts";
 
 export type PdfToolKind = "pdftotext" | "mutool" | "python";
 
@@ -27,11 +28,12 @@ const PYTHON_SCRIPT = [
 	'    print("\\f", end="")',
 ].join("\n");
 
-/** pdftotext -v reports its version but exits with status 99, so that probe is special. */
+// pdftotext -v reports its version but exits with status 99, so that probe is special.
 function canProbe(candidate: PdfCommand): boolean {
-	const result = spawnSync(candidate.command, probeArgs(candidate), { stdio: "ignore", timeout: 5000 });
-	if (result.error) return false;
-	return candidate.kind === "pdftotext" ? result.status === 0 || result.status === 99 : result.status === 0;
+	return probeCommandSync(candidate.command, probeArgs(candidate), {
+		acceptStatus:
+			candidate.kind === "pdftotext" ? (status) => status === 0 || status === 99 : (status) => status === 0,
+	}).ok;
 }
 
 function kindFromName(name: string): PdfToolKind | undefined {
@@ -45,12 +47,26 @@ function kindFromName(name: string): PdfToolKind | undefined {
 function makeCommand(name: string, kind: PdfToolKind): PdfCommand {
 	return {
 		command: name,
-		prefixArgs: kind === "python" && basename(name).toLowerCase().startsWith("py") ? ["-3"] : [],
+		prefixArgs: kind === "python" ? pythonPrefixArgs(name) : [],
 		kind,
 	};
 }
 
 let detected: PdfCommand | null | undefined;
+
+// Settings can change during a session; /doctor and /research need to re-probe.
+export function resetPdfCommandDetection(): void {
+	detected = undefined;
+}
+
+export function inspectPdfCommand(configured?: string): { command?: PdfCommand; error?: string } {
+	try {
+		const command = detectPdfCommand(configured);
+		return command ? { command } : { error: pdfCommandHint() };
+	} catch (error) {
+		return { error: error instanceof Error ? error.message : String(error) };
+	}
+}
 
 function probeArgs(candidate: PdfCommand): string[] {
 	if (candidate.kind === "python") return [...candidate.prefixArgs, "-c", "import fitz"];

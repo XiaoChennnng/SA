@@ -32,6 +32,7 @@ export {
 export function createAllToolRenderers(): Record<ToolName, ToolRenderers> {
 	return {
 		read: readRenderers,
+		ask_user: {},
 		bash: createShellRenderers("$"),
 		powershell: createShellRenderers("PS>"),
 		edit: editRenderers,
@@ -49,6 +50,8 @@ export function createAllToolRenderers(): Record<ToolName, ToolRenderers> {
 		web_search: {},
 		web_extract: {},
 		web_search_domains: {},
+		paper_write: {},
+		research_files: {},
 	};
 }
 

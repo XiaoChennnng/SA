@@ -17,6 +17,8 @@ const installPackageName = "@sa/coding-agent-install";
 const allowedInstallScriptPackages = new Map([
 	["@google/genai@2.21.0", "preinstall is a no-op in the published package"],
 	["protobufjs@7.6.6", "postinstall only warns about protobufjs version scheme mismatches"],
+	["cpu-features@0.0.10", "optional native acceleration for ssh2; SA installs with --ignore-scripts and uses the JS fallback"],
+	["ssh2@1.17.0", "postinstall builds an optional crypto binding; pure-JS fallback is used and SA installs with --ignore-scripts"],
 ]);
 
 const args = new Set(process.argv.slice(2));

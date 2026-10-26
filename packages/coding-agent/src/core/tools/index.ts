@@ -1,4 +1,12 @@
 export {
+	type AskUserAnswer,
+	type AskUserToolDetails,
+	type AskUserToolInput,
+	askUserToolSystemPromptContribution,
+	createAskUserTool,
+	createAskUserToolDefinition,
+} from "./ask-user.ts";
+export {
 	type BashOperations,
 	type BashSpawnContext,
 	type BashSpawnHook,
@@ -82,6 +90,7 @@ export {
 
 import type { AgentTool } from "@sa/agent-core";
 import type { ToolDefinition } from "../extensions/types.ts";
+import { createAskUserTool, createAskUserToolDefinition } from "./ask-user.ts";
 import { type BashToolOptions, createBashTool, createBashToolDefinition } from "./bash.ts";
 import { createEditTool, createEditToolDefinition, type EditToolOptions } from "./edit.ts";
 import { createFindTool, createFindToolDefinition, type FindToolOptions } from "./find.ts";
@@ -100,8 +109,12 @@ import {
 	createPaperReadToolDefinition,
 	createPaperSearchTool,
 	createPaperSearchToolDefinition,
+	createPaperWriteTool,
+	createPaperWriteToolDefinition,
 	createPythonRunTool,
 	createPythonRunToolDefinition,
+	createResearchFilesTool,
+	createResearchFilesToolDefinition,
 	createResearchNoteTool,
 	createResearchNoteToolDefinition,
 	createWebExtractTool,
@@ -118,6 +131,7 @@ export type Tool = AgentTool<any>;
 export type ToolDef = ToolDefinition<any, any>;
 export type ToolName =
 	| "read"
+	| "ask_user"
 	| "bash"
 	| "powershell"
 	| "edit"
@@ -134,9 +148,12 @@ export type ToolName =
 	| "python_run"
 	| "web_search"
 	| "web_extract"
-	| "web_search_domains";
+	| "web_search_domains"
+	| "paper_write"
+	| "research_files";
 export const allToolNames: Set<ToolName> = new Set([
 	"read",
+	"ask_user",
 	"bash",
 	"powershell",
 	"edit",
@@ -154,6 +171,8 @@ export const allToolNames: Set<ToolName> = new Set([
 	"web_search",
 	"web_extract",
 	"web_search_domains",
+	"paper_write",
+	"research_files",
 ]);
 
 export interface ToolsOptions {
@@ -173,6 +192,8 @@ export function createToolDefinition(toolName: ToolName, cwd: string, options?: 
 	switch (toolName) {
 		case "read":
 			return createReadToolDefinition(cwd, options?.read);
+		case "ask_user":
+			return createAskUserToolDefinition(cwd);
 		case "bash":
 			return createBashToolDefinition(cwd, options?.bash);
 		case "powershell":
@@ -207,6 +228,10 @@ export function createToolDefinition(toolName: ToolName, cwd: string, options?: 
 			return createWebExtractToolDefinition(cwd, options?.research);
 		case "web_search_domains":
 			return createWebSearchDomainsToolDefinition(cwd, options?.research);
+		case "paper_write":
+			return createPaperWriteToolDefinition(cwd, options?.research);
+		case "research_files":
+			return createResearchFilesToolDefinition(cwd, options?.research);
 		default:
 			throw new Error(`Unknown tool name: ${toolName}`);
 	}
@@ -216,6 +241,8 @@ export function createTool(toolName: ToolName, cwd: string, options?: ToolsOptio
 	switch (toolName) {
 		case "read":
 			return createReadTool(cwd, options?.read);
+		case "ask_user":
+			return createAskUserTool(cwd);
 		case "bash":
 			return createBashTool(cwd, options?.bash);
 		case "powershell":
@@ -250,6 +277,10 @@ export function createTool(toolName: ToolName, cwd: string, options?: ToolsOptio
 			return createWebExtractTool(cwd, options?.research);
 		case "web_search_domains":
 			return createWebSearchDomainsTool(cwd, options?.research);
+		case "paper_write":
+			return createPaperWriteTool(cwd, options?.research);
+		case "research_files":
+			return createResearchFilesTool(cwd, options?.research);
 		default:
 			throw new Error(`Unknown tool name: ${toolName}`);
 	}
@@ -276,6 +307,7 @@ export function createReadOnlyToolDefinitions(cwd: string, options?: ToolsOption
 export function createAllToolDefinitions(cwd: string, options?: ToolsOptions): Record<ToolName, ToolDef> {
 	return {
 		read: createReadToolDefinition(cwd, options?.read),
+		ask_user: createAskUserToolDefinition(cwd),
 		bash: createBashToolDefinition(cwd, options?.bash),
 		powershell: createPowerShellToolDefinition(cwd, options?.powershell),
 		edit: createEditToolDefinition(cwd, options?.edit),
@@ -293,6 +325,8 @@ export function createAllToolDefinitions(cwd: string, options?: ToolsOptions): R
 		web_search: createWebSearchToolDefinition(cwd, options?.research),
 		web_extract: createWebExtractToolDefinition(cwd, options?.research),
 		web_search_domains: createWebSearchDomainsToolDefinition(cwd, options?.research),
+		paper_write: createPaperWriteToolDefinition(cwd, options?.research),
+		research_files: createResearchFilesToolDefinition(cwd, options?.research),
 	};
 }
 
@@ -317,6 +351,7 @@ export function createReadOnlyTools(cwd: string, options?: ToolsOptions): Tool[]
 export function createAllTools(cwd: string, options?: ToolsOptions): Record<ToolName, Tool> {
 	return {
 		read: createReadTool(cwd, options?.read),
+		ask_user: createAskUserTool(cwd),
 		bash: createBashTool(cwd, options?.bash),
 		powershell: createPowerShellTool(cwd, options?.powershell),
 		edit: createEditTool(cwd, options?.edit),
@@ -334,5 +369,7 @@ export function createAllTools(cwd: string, options?: ToolsOptions): Record<Tool
 		web_search: createWebSearchTool(cwd, options?.research),
 		web_extract: createWebExtractTool(cwd, options?.research),
 		web_search_domains: createWebSearchDomainsTool(cwd, options?.research),
+		paper_write: createPaperWriteTool(cwd, options?.research),
+		research_files: createResearchFilesTool(cwd, options?.research),
 	};
 }

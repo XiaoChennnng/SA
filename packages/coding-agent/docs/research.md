@@ -18,6 +18,9 @@ never uploads research data.
 | `web_search` | Search the web through AnySearch; returns titles, URLs, snippets, and extracted content |
 | `web_extract` | Read a public web page by URL through AnySearch |
 | `web_search_domains` | List AnySearch domains, sub-domains, and parameters for specialized searches |
+| `paper_write` | Typeset a Markdown manuscript into a polished PDF with Python/reportlab when LaTeX is unavailable |
+| `research_files` | Create folders and manage files inside the research workspace |
+| `ask_user` | Ask clarifying questions with options or free text until requirements are clear |
 
 These tools are active by default. Remove them from `defaultTools` or disable individual tools with
 `--exclude-tools` when you want a coding-only session.
@@ -90,6 +93,45 @@ Example setting:
 Command arguments are split without a shell, so `{query}` is passed as a single argument and cannot
 inject shell syntax.
 
+## Writing a paper without LaTeX
+
+`paper_write` turns Markdown into a clean PDF using Python and reportlab, so a LaTeX toolchain is
+not required. It supports a title block, authors, abstract, keywords, numbered headings, lists,
+tables, fenced code, images, block quotes, references, page numbers, cover pages, margins, serif or
+sans fonts, and one or two columns.
+
+- If the user states formatting requirements, pass them in `formatRequirements`; SA maps common
+  rules (A4/Letter, single/two columns, 宋体/黑体/Times, 小四/五号/12pt, 1.5/double spacing,
+  page margins in cm/mm/inch, page numbers, heading numbering, cover page) into style fields.
+  Explicit `style` fields override parsed rules.
+- Relative `outputPath` values resolve inside the research workspace. The default is
+  `manuscripts/<title>/paper.pdf`, with a `.md` source copy written beside it.
+- Requires Python 3 and `reportlab` (`pip install reportlab`); `pypdf` is optional for page counts.
+- If you have a LaTeX project, use `latex_build` instead. `paper_write` does not replace LaTeX for
+  journal templates, complex math, or BibTeX-driven styles.
+
+## Research workspace
+
+The workspace is a user-visible folder for everything the research agent creates. Its default root
+is `~/.sa/agent/research/workspace/` and it is configurable with `research.workspaceDir`.
+
+`research_files` can create directories, write and read text, move, copy, delete, inspect, and list
+files. All paths are confined to the workspace root; `..` and absolute escapes are rejected. A
+practical layout:
+
+```text
+workspace/
+├── papers/          # per-paper PDFs, extracted text, notes
+├── notes/           # topic notes and reading notes
+├── data/            # raw and processed datasets
+├── figures/         # generated plots and images
+├── experiments/     # configs, logs, results
+└── manuscripts/     # Markdown sources and paper_write PDFs
+```
+
+Create new folders freely when a project needs them; keep research artifacts out of the project root
+unless the user asks otherwise.
+
 ## Web search and reading
 
 `web_search` uses the [AnySearch](https://www.anysearch.com/docs/api-endpoints/v1-search) v1 search API. It returns titles, URLs, snippets, and extracted
@@ -136,10 +178,26 @@ SA uses existing command-line tools rather than bundled binaries:
 |---|---|
 | PDF text extraction | `pdftotext` (poppler), `mutool` (MuPDF), or Python with PyMuPDF (`pip install pymupdf`) |
 | Python analysis | Python 3 (`python3`, `python`, or `py -3`), or set `research.pythonPath` |
+| Paper PDF without LaTeX | Python 3 with `reportlab` (`pip install reportlab`); `pypdf` optional |
 | LaTeX | `latexmk`, `pdflatex`, `xelatex`, or `lualatex`, or set `research.latexCommand` |
 
 When no PDF extractor is available, `paper_read` returns an installation hint and can still return
 the abstract. Scanned PDFs without a text layer are not OCRed.
+
+Run `/doctor` in SA to inspect the active workspace. By default the command asks SA to run real
+checks and report missing tools; `/doctor quick` runs SA's built-in detector without an extra model
+turn. The report groups requirements by tool and includes install suggestions, and SA can install
+the missing items in the conversation after you confirm.
+
+## Remote workspaces
+
+`/ssh user@host:/remote/path` switches the workspace tools to a remote Linux or macOS host. In SSH
+mode, `read`, `write`, `edit`, `grep`, `find`, `ls`, `bash`, `python_run`, `latex_build`,
+`paper_write`, and `research_files` operate on the server. Literature/web search, the note and
+experiment database, and paper caches stay local. Remote research files default to
+`<remote-workspace>/research`. Use `/doctor` after connecting to check the server's Python,
+reportlab, LaTeX, fonts, and search tools. See [SSH remote workspace](remote-workspace.md) for setup,
+security, and limitations.
 
 ## Settings
 
@@ -159,6 +217,7 @@ Add a `research` block to `settings.json`:
     "databasePath": "~/.sa/agent/research/research.db",
     "cacheDir": "~/.sa/agent/research/cache",
     "workDir": "~/.sa/agent/research/work",
+    "workspaceDir": "~/.sa/agent/research/workspace",
     "pdfCommand": "pdftotext",
     "pythonPath": "python",
     "latexCommand": "latexmk",
@@ -181,6 +240,7 @@ Add a `research` block to `settings.json`:
 | `databasePath` | `~/.sa/agent/research/research.db` | SQLite knowledge base |
 | `cacheDir` | `~/.sa/agent/research/cache` | Downloaded PDFs and extracted text |
 | `workDir` | `~/.sa/agent/research/work` | Temporary scripts and generated files |
+| `workspaceDir` | `~/.sa/agent/research/workspace` | User-visible research workspace for papers, notes, data, figures, and manuscripts |
 | `pdfCommand` | auto-detect | `pdftotext`, `mutool`, or a Python executable with PyMuPDF |
 | `pythonPath` | auto-detect | Python executable for `python_run` |
 | `latexCommand` | auto-detect | LaTeX engine or executable for `latex_build` |

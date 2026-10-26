@@ -60,6 +60,9 @@ export const SETTINGS_DEFAULTS = {
 		maxResults: 10,
 		requestTimeoutMs: 30_000,
 	},
+	ssh: {
+		profiles: {},
+	},
 	cacheWarming: "streaming",
 	tuiMode: "fullscreen",
 	fullscreenExitOutput: "transcript",

@@ -164,4 +164,6 @@ export interface ResearchSettings {
 	requestTimeoutMs: number;
 	/** Directory for temporary scripts and build output. */
 	workDir: string;
+	/** User-visible workspace for manuscripts, data, figures, and notes files. */
+	workspaceDir: string;
 }

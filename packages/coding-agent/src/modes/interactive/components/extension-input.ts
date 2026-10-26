@@ -13,6 +13,8 @@ export interface ExtensionInputOptions {
 	timeout?: number;
 	initialValue?: string;
 	description?: string;
+	/** Render typed characters as `*` for passwords and other secrets. */
+	mask?: boolean;
 }
 
 export class ExtensionInputComponent extends Container implements Focusable {
@@ -66,7 +68,7 @@ export class ExtensionInputComponent extends Container implements Focusable {
 			);
 		}
 
-		this.input = new Input();
+		this.input = new Input({ mask: opts?.mask });
 		if (opts?.initialValue) this.input.setValue(opts.initialValue);
 		this.addChild(this.input);
 		this.addChild(new Spacer(1));
