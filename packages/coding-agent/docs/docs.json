@@ -134,6 +134,15 @@
       ]
     },
     {
+      "title": "Research",
+      "items": [
+        {
+          "title": "Research Workflow",
+          "path": "research.md"
+        }
+      ]
+    },
+    {
       "title": "Reference",
       "items": [
         {

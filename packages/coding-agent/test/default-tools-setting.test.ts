@@ -63,7 +63,26 @@ describe("defaultTools setting", () => {
 				.getAllTools()
 				.map((tool) => tool.name)
 				.sort(),
-		).toEqual(["bash", "edit", "find", "grep", "ls", "powershell", "read", "write"]);
+		).toEqual([
+			"bash",
+			"citation",
+			"edit",
+			"experiment_log",
+			"find",
+			"grep",
+			"latex_build",
+			"ls",
+			"paper_read",
+			"paper_search",
+			"powershell",
+			"python_run",
+			"read",
+			"research_note",
+			"web_extract",
+			"web_search",
+			"web_search_domains",
+			"write",
+		]);
 		expect(session.getActiveToolNames()).toEqual(["grep", "find"]);
 		expect(session.systemPrompt).toContain("- grep:");
 		expect(session.systemPrompt).not.toContain("- read:");
@@ -93,7 +112,22 @@ describe("defaultTools setting", () => {
 			},
 		]);
 
-		expect(session.getActiveToolNames().sort()).toEqual(["bash", "edit", "inactive_tool", "read"]);
+		expect(session.getActiveToolNames().sort()).toEqual([
+			"bash",
+			"citation",
+			"edit",
+			"experiment_log",
+			"inactive_tool",
+			"latex_build",
+			"paper_read",
+			"paper_search",
+			"python_run",
+			"read",
+			"research_note",
+			"web_extract",
+			"web_search",
+			"web_search_domains",
+		]);
 		session.dispose();
 	});
 
@@ -179,10 +213,20 @@ describe("defaultTools setting", () => {
 		expect(session.getActiveToolNames().sort()).toEqual([
 			"active_tool",
 			"bash",
+			"citation",
 			"edit",
+			"experiment_log",
 			"grep",
 			"inactive_tool",
+			"latex_build",
+			"paper_read",
+			"paper_search",
+			"python_run",
 			"read",
+			"research_note",
+			"web_extract",
+			"web_search",
+			"web_search_domains",
 		]);
 		session.dispose();
 
@@ -240,7 +284,24 @@ describe("defaultTools setting", () => {
 		// #10245
 		it("activates only tools newly added to defaultTools", async () => {
 			const session = await createFileSession();
-			expect(session.getActiveToolNames()).toEqual(["read", "bash", "edit", "write"]);
+			expect(session.getActiveToolNames()).toEqual([
+				"read",
+				"bash",
+				"edit",
+				"write",
+				"paper_search",
+				"paper_read",
+				"research_note",
+				"experiment_log",
+				"citation",
+				"latex_build",
+				"python_run",
+				"web_search",
+				"web_extract",
+				"web_search_domains",
+			]);
+			expect(session.systemPrompt).toContain("- paper_search:");
+			expect(session.systemPrompt).toContain("- experiment_log:");
 			session.setActiveToolsByName(["read", "edit", "write"]);
 
 			writeSettings({ defaultTools: ["+inactive_tool", "+grep"] });
@@ -284,7 +345,23 @@ describe("defaultTools setting", () => {
 			const excluded = await createFileSession({ excludeTools: ["grep"] });
 			writeSettings({ defaultTools: ["+grep", "+inactive_tool"] });
 			await excluded.reload();
-			expect(excluded.getActiveToolNames().sort()).toEqual(["bash", "edit", "inactive_tool", "read", "write"]);
+			expect(excluded.getActiveToolNames().sort()).toEqual([
+				"bash",
+				"citation",
+				"edit",
+				"experiment_log",
+				"inactive_tool",
+				"latex_build",
+				"paper_read",
+				"paper_search",
+				"python_run",
+				"read",
+				"research_note",
+				"web_extract",
+				"web_search",
+				"web_search_domains",
+				"write",
+			]);
 			excluded.dispose();
 		});
 	});
@@ -450,7 +527,23 @@ describe("defaultTools setting", () => {
 			const sessionManager = SessionManager.inMemory(tempDir);
 			sessionManager.appendMessage({ role: "user", content: "hi", timestamp: Date.now() });
 			const session = await resume(sessionManager);
-			expect(session.getActiveToolNames().sort()).toEqual(["active_tool", "bash", "edit", "read", "write"]);
+			expect(session.getActiveToolNames().sort()).toEqual([
+				"active_tool",
+				"bash",
+				"citation",
+				"edit",
+				"experiment_log",
+				"latex_build",
+				"paper_read",
+				"paper_search",
+				"python_run",
+				"read",
+				"research_note",
+				"web_extract",
+				"web_search",
+				"web_search_domains",
+				"write",
+			]);
 			session.dispose();
 		});
 	});
@@ -469,7 +562,26 @@ describe("defaultTools setting", () => {
 				.getAllTools()
 				.map((tool) => tool.name)
 				.sort(),
-		).toEqual(["bash", "edit", "find", "grep", "ls", "powershell", "read", "write"]);
+		).toEqual([
+			"bash",
+			"citation",
+			"edit",
+			"experiment_log",
+			"find",
+			"grep",
+			"latex_build",
+			"ls",
+			"paper_read",
+			"paper_search",
+			"powershell",
+			"python_run",
+			"read",
+			"research_note",
+			"web_extract",
+			"web_search",
+			"web_search_domains",
+			"write",
+		]);
 		expect(session.getActiveToolNames()).toEqual(["ls"]);
 		session.dispose();
 	});

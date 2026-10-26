@@ -43,7 +43,7 @@ See [Choose a Model](models.md) for model selection and thinking controls.
 | `codemode.mode` | `"on"` \| `"only"` | `"on"` | How the `codemode` tool presents tools while it is active. `on`: declared tools get a note on calling them from scripts appended to their description, and `codemode` lists only tools that are not declared. `only`: `codemode` lists every tool scripts can call, and active built-in and extension tools are hidden from the model, so it reaches them through `codemode`. |
 | `codemode.inlineBudget` | number | `3000` | Estimated tokens (characters / 4) the `codemode` tool's description may spend on tool declarations. Tools that do not fit are left out and found with `searchTools()`. `0` lists only namespaces. |
 
-Available built-in tools are `read`, `bash`, `powershell`, `edit`, `write`, `grep`, `find`, and `ls`. `defaultTools` can also name `codemode` and `tool_search`, which built-in extensions register inactive, and other extension tools registered inactive.
+Available built-in tools are `read`, `bash`, `powershell`, `edit`, `write`, `grep`, `find`, `ls`, `paper_search`, `paper_read`, `research_note`, `experiment_log`, `citation`, `latex_build`, `python_run`, `web_search`, `web_extract`, and `web_search_domains`. `defaultTools` can also name `codemode` and `tool_search`, which built-in extensions register inactive, and other extension tools registered inactive.
 
 A list of only `+name` and `-name` entries changes the inherited selection instead of replacing it. For example, this enables `codemode` next to the default tools:
 
@@ -160,6 +160,30 @@ Resource paths in user settings resolve from the agent directory. Paths in proje
 Resource arrays support glob exclusions with `!pattern`, exact inclusion with `+path`, and exact exclusion with `-path`. SA loads resources listed in both user-level and project settings.
 
 The built-in extensions are named `builtin:mcp`, `builtin:llama.cpp`, `builtin:codemode`, and `builtin:tool-search` in `extensions`. They load by default; `-builtin:mcp` disables one. A `+builtin:<name>` or `-builtin:<name>` entry in project settings overrides the user setting. `sa config` lists them under Built-in. `--no-extensions` disables them too, and `-e builtin:<name>` loads one explicitly.
+
+## Research
+
+The `research` block configures the built-in literature, note, experiment, citation, LaTeX, and
+Python tools. See [Research Workflow](research.md) for usage and system requirements.
+
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `mailto` | string | — | Contact address sent to OpenAlex and PubMed |
+| `semanticScholarApiKey` | string | — | Higher Semantic Scholar rate limits |
+| `ncbiApiKey` | string | — | Higher PubMed rate limits |
+| `coreApiKey` | string | — | CORE API key; enables CORE in default searches and raises limits |
+| `anySearchApiKey` | string | — | AnySearch API key for web_search and web_extract |
+| `wanfangAppKey` | string | — | Wanfang open-platform APP_KEY, enables Chinese journal/thesis/conference search |
+| `cnkiCommand` | string | — | Local command that searches CNKI and prints JSON; supports `{query}` and `{limit}` |
+| `nstlCommand` | string | — | Institutional NSTL gateway command that prints JSON; supports `{query}` and `{limit}` |
+| `databasePath` | string | `~/.sa/agent/research/research.db` | SQLite knowledge base |
+| `cacheDir` | string | `~/.sa/agent/research/cache` | PDF and extracted-text cache |
+| `workDir` | string | `~/.sa/agent/research/work` | Temporary scripts and outputs |
+| `pdfCommand` | string | auto-detect | `pdftotext`, `mutool`, or Python with PyMuPDF |
+| `pythonPath` | string | auto-detect | Python executable for `python_run` |
+| `latexCommand` | string | auto-detect | LaTeX engine for `latex_build` |
+| `maxResults` | integer | `10` | Default search result count |
+| `requestTimeoutMs` | integer | `30000` | Per-request timeout |
 
 ## Updates and warnings
 

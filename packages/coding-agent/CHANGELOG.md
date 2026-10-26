@@ -4,6 +4,10 @@
 
 ### Added
 
+- Built-in research tools, enabled by default: `paper_search` (arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed), `paper_read` (open-access PDFs with system extraction), `research_note` and `experiment_log` (SQLite with full-text search), `citation` (BibTeX import/export/validation), `latex_build`, and `python_run`. A new `research` settings block configures providers, storage paths, and system tools.
+- Added `/research` to configure research APIs and sources interactively or with `/research set <field> <value>`. Chinese literature search now supports Wanfang through its official open platform and CNKI/NSTL through user-configured authorized commands; configured sources join default searches automatically.
+- Added Europe PMC, OpenAIRE, DOAJ, HAL, and CORE (with a key) as literature search sources, and Unpaywall as the first open-access PDF resolver for DOI reads.
+- Added AnySearch-powered `web_search`, `web_extract`, and `web_search_domains` tools. The `/research` menu now shows clickable API signup links for every configurable API.
 - Device-code login (for example GitHub Copilot) now opens the verification page and copies the code when you press Enter. Providers can turn either action off with `openBrowserOnConfirm: false` or `copyCodeOnConfirm: false` ([#9282](https://github.com/earendil-works/pi/issues/9282), [#9301](https://github.com/earendil-works/pi/pull/9301))
 
 ### Changed

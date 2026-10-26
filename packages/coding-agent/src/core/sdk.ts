@@ -27,14 +27,24 @@ import {
 import { time } from "./timings.ts";
 import {
 	createBashTool,
+	createCitationTool,
 	createCodingTools,
 	createEditTool,
+	createExperimentLogTool,
 	createFindTool,
 	createGrepTool,
+	createLatexBuildTool,
 	createLsTool,
+	createPaperReadTool,
+	createPaperSearchTool,
 	createPowerShellTool,
+	createPythonRunTool,
 	createReadOnlyTools,
 	createReadTool,
+	createResearchNoteTool,
+	createWebExtractTool,
+	createWebSearchDomainsTool,
+	createWebSearchTool,
 	createWriteTool,
 	withFileMutationQueue,
 } from "./tools/index.ts";
@@ -145,6 +155,17 @@ export {
 	createFindTool,
 	createLsTool,
 	createPowerShellTool,
+	// Research tool factories
+	createPaperSearchTool,
+	createPaperReadTool,
+	createResearchNoteTool,
+	createExperimentLogTool,
+	createCitationTool,
+	createLatexBuildTool,
+	createPythonRunTool,
+	createWebSearchTool,
+	createWebExtractTool,
+	createWebSearchDomainsTool,
 };
 
 // Helper Functions

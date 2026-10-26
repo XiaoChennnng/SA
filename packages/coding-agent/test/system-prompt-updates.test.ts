@@ -46,7 +46,22 @@ describe("system prompt updates", () => {
 			if (head?.role !== "system") throw new Error("expected system message");
 			expect(head.content).toBe("");
 			expect(Object.keys(head.sections ?? {})).toEqual(["preamble", "tools", "rules", "docs", "cwd"]);
-			expect(head.toolsAdded?.map((tool) => tool.name)).toEqual(["read", "bash", "edit", "write"]);
+			expect(head.toolsAdded?.map((tool) => tool.name)).toEqual([
+				"read",
+				"bash",
+				"edit",
+				"write",
+				"paper_search",
+				"paper_read",
+				"research_note",
+				"experiment_log",
+				"citation",
+				"latex_build",
+				"python_run",
+				"web_search",
+				"web_extract",
+				"web_search_domains",
+			]);
 			expect(getSystemMessageText(head)).toBe(harness.session.systemPrompt);
 		} finally {
 			harness.cleanup();

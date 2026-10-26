@@ -35,6 +35,7 @@ import {
 	type Component,
 	Container,
 	fuzzyFilter,
+	hyperlink,
 	Markdown,
 	matchesKey,
 	Spacer,
@@ -116,6 +117,7 @@ import { withBuiltInRenderers } from "../../core/tools/renderers/index.ts";
 import type { TruncationResult } from "../../core/tools/truncate.ts";
 import { hasTrustRequiringProjectResources, ProjectTrustStore } from "../../core/trust-manager.ts";
 import { getUsageCostBreakdown } from "../../core/usage-totals.ts";
+import { resolveResearchSettings } from "../../research/settings.ts";
 import { getChangelogPath, getNewEntries, normalizeChangelogLinks, parseChangelog } from "../../utils/changelog.ts";
 import { copyToClipboard, readClipboardFilePaths, readClipboardText } from "../../utils/clipboard.ts";
 import { extensionForImageMimeType, readClipboardImage } from "../../utils/clipboard-image.ts";
@@ -175,6 +177,13 @@ import { editInExternalEditor } from "./external-editor.ts";
 import { refreshModelCatalogs } from "./model-catalog-refresh.ts";
 import { getModelSearchText } from "./model-search.ts";
 import { type BlockedStatus, ProgramStatusReporter } from "./program-status-reporter.ts";
+import {
+	findResearchConfigField,
+	formatResearchConfigStatus,
+	formatResearchFieldValue,
+	RESEARCH_CONFIG_FIELDS,
+	type ResearchConfigField,
+} from "./research-config.ts";
 import {
 	getAvailableThemes,
 	getAvailableThemesWithPaths,
@@ -3118,6 +3127,11 @@ export class InteractiveMode {
 			if (!text) return;
 
 			// Handle commands
+			if (text === "/research" || text.startsWith("/research ")) {
+				this.editor.setText("");
+				await this.handleResearchCommand(text.slice("/research".length).trim());
+				return;
+			}
 			if (text === "/settings") {
 				this.showSettingsSelector();
 				this.editor.setText("");
@@ -4818,6 +4832,107 @@ export class InteractiveMode {
 		this.editorContainer.addChild(created.component);
 		this.ui.setFocus(created.focus);
 		this.ui.requestRender();
+	}
+
+	private async handleResearchCommand(args: string): Promise<void> {
+		const [subcommand = "", ...rest] = args.split(/\s+/).filter(Boolean);
+		if (!subcommand) {
+			this.showResearchMenu();
+			return;
+		}
+		if (subcommand === "status") {
+			this.showStatus(formatResearchConfigStatus(this.currentResearchSettings()));
+			return;
+		}
+		if (subcommand === "set" || subcommand === "clear") {
+			const fieldName = rest.shift();
+			if (!fieldName) {
+				this.showError(`Usage: /research ${subcommand} <field>${subcommand === "set" ? " <value>" : ""}`);
+				return;
+			}
+			const value = subcommand === "clear" ? "" : rest.join(" ").trim();
+			if (subcommand === "set" && !value) {
+				this.showError("Usage: /research set <field> <value>");
+				return;
+			}
+			this.applyResearchSetting(fieldName, value);
+			return;
+		}
+		this.showError(
+			`Unknown /research command "${subcommand}". Use /research, /research status, /research set <field> <value>, or /research clear <field>.`,
+		);
+	}
+
+	private currentResearchSettings() {
+		return resolveResearchSettings(this.settingsManager.getResearchSettings());
+	}
+
+	private applyResearchSetting(fieldName: string, rawValue: string): void {
+		const field = findResearchConfigField(fieldName);
+		if (!field) {
+			this.showError(
+				`Unknown research field "${fieldName}". Fields: ${RESEARCH_CONFIG_FIELDS.map((item) => item.id).join(", ")}.`,
+			);
+			return;
+		}
+		if (field.kind === "number") {
+			const value = Number.parseInt(rawValue, 10);
+			if (!Number.isFinite(value) || value < 1 || value > 50) {
+				this.showError(`${field.label} must be an integer between 1 and 50.`);
+				return;
+			}
+			this.settingsManager.setResearchSetting(field.settingKey, value);
+			this.showStatus(`${field.label}: ${value}`);
+			return;
+		}
+		this.settingsManager.setResearchSetting(field.settingKey, rawValue.trim() || undefined);
+		const settings = this.currentResearchSettings();
+		this.showStatus(`${field.label}: ${rawValue.trim() ? formatResearchFieldValue(settings, field) : "cleared"}`);
+	}
+
+	private showResearchMenu(): void {
+		this.showSelector((done) => {
+			const settings = this.currentResearchSettings();
+			const options = [
+				...RESEARCH_CONFIG_FIELDS.map((field) => {
+					const link = field.applyUrl ? ` ${hyperlink("↗ API", field.applyUrl)}` : "";
+					return `${field.label}: ${formatResearchFieldValue(settings, field)}${link}`;
+				}),
+				"Show configuration summary",
+				"Done",
+			];
+			const selector = new ExtensionSelectorComponent(
+				"Research APIs and sources",
+				options,
+				(option) => {
+					done();
+					if (option === "Done") return;
+					if (option === "Show configuration summary") {
+						this.showStatus(formatResearchConfigStatus(settings));
+						return;
+					}
+					const index = options.indexOf(option);
+					const field = RESEARCH_CONFIG_FIELDS[index];
+					if (field) void this.editResearchField(field);
+				},
+				() => done(),
+			);
+			return { component: selector, focus: selector };
+		});
+	}
+
+	private async editResearchField(field: ResearchConfigField): Promise<void> {
+		const settings = this.currentResearchSettings();
+		const current = settings[field.settingKey];
+		const prefill = field.secret || current === undefined ? undefined : String(current);
+		const suffix = field.secret ? " (leave empty to clear)" : "";
+		const value = await this.showExtensionEditor(`${field.label}${suffix}`, prefill);
+		if (value === undefined) {
+			this.showResearchMenu();
+			return;
+		}
+		this.applyResearchSetting(field.id, value);
+		this.showResearchMenu();
 	}
 
 	private showSettingsSelector(): void {

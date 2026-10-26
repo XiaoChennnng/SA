@@ -203,9 +203,55 @@ const SkillsInputSchema = Type.Union(
 	{ description: "Local skill file paths or directories." },
 );
 
+const ResearchSettingsSchema = Type.Object({
+	mailto: Type.Optional(
+		Type.String({ description: "Contact email sent to OpenAlex and PubMed as requested by their APIs." }),
+	),
+	semanticScholarApiKey: Type.Optional(
+		Type.String({ description: "Semantic Scholar API key for higher rate limits." }),
+	),
+	ncbiApiKey: Type.Optional(Type.String({ description: "NCBI API key for higher PubMed rate limits." })),
+	coreApiKey: Type.Optional(
+		Type.String({ description: "CORE API key (core.ac.uk/services/api), for higher limits." }),
+	),
+	anySearchApiKey: Type.Optional(
+		Type.String({
+			description: "AnySearch API key for web_search and web_extract; anonymous access is rate-limited.",
+		}),
+	),
+	wanfangAppKey: Type.Optional(Type.String({ description: "Wanfang open-platform APP_KEY (ai.wfdata.com)." })),
+	cnkiCommand: Type.Optional(
+		Type.String({
+			description:
+				"Command that searches CNKI and prints JSON. Supports {query} and {limit} placeholders; CNKI has no public API.",
+		}),
+	),
+	nstlCommand: Type.Optional(
+		Type.String({
+			description:
+				"Command that searches NSTL through an institutional gateway and prints JSON. NSTL APIs require institutional approval.",
+		}),
+	),
+	databasePath: Type.Optional(
+		Type.String({ description: "SQLite knowledge base path (default: ~/.sa/agent/research/research.db)." }),
+	),
+	cacheDir: Type.Optional(Type.String({ description: "Directory for downloaded papers and extracted text." })),
+	workDir: Type.Optional(Type.String({ description: "Directory for temporary scripts and generated files." })),
+	pdfCommand: Type.Optional(
+		Type.String({ description: "PDF text extractor: pdftotext, mutool, or a Python executable with PyMuPDF." }),
+	),
+	pythonPath: Type.Optional(Type.String({ description: "Python executable used by python_run." })),
+	latexCommand: Type.Optional(Type.String({ description: "LaTeX engine or executable used by latex_build." })),
+	maxResults: Type.Optional(Type.Integer({ minimum: 1, maximum: 50, default: SETTINGS_DEFAULTS.research.maxResults })),
+	requestTimeoutMs: Type.Optional(
+		Type.Integer({ minimum: 1000, default: SETTINGS_DEFAULTS.research.requestTimeoutMs }),
+	),
+});
+
 export const SettingsSchema = Type.Object(
 	{
 		$schema: Type.Optional(Type.String({ description: "JSON Schema reference." })),
+		research: Type.Optional(ResearchSettingsSchema),
 		lastChangelogVersion: Type.Optional(Type.String()),
 		defaultProvider: Type.Optional(Type.String()),
 		defaultModel: Type.Optional(Type.String()),
@@ -453,6 +499,7 @@ export interface ThinkingBudgetsSettings extends Static<typeof ThinkingBudgetsSe
 export type MermaidRenderingMode = NonNullable<Static<typeof MarkdownSettingsSchema>["mermaid"]>;
 export interface MarkdownSettings extends Static<typeof MarkdownSettingsSchema> {}
 export interface WarningSettings extends Static<typeof WarningSettingsSchema> {}
+export interface ResearchSettings extends Static<typeof ResearchSettingsSchema> {}
 export type CodemodeMode = Static<typeof CodemodeModeSchema>;
 export interface CodemodeSettings extends Static<typeof CodemodeSettingsSchema> {}
 export type DefaultProjectTrust = NonNullable<SettingsInput["defaultProjectTrust"]>;

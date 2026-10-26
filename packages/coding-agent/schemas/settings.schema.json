@@ -8,6 +8,78 @@
       "type": "string",
       "description": "JSON Schema reference."
     },
+    "research": {
+      "type": "object",
+      "properties": {
+        "mailto": {
+          "type": "string",
+          "description": "Contact email sent to OpenAlex and PubMed as requested by their APIs."
+        },
+        "semanticScholarApiKey": {
+          "type": "string",
+          "description": "Semantic Scholar API key for higher rate limits."
+        },
+        "ncbiApiKey": {
+          "type": "string",
+          "description": "NCBI API key for higher PubMed rate limits."
+        },
+        "coreApiKey": {
+          "type": "string",
+          "description": "CORE API key (core.ac.uk/services/api), for higher limits."
+        },
+        "anySearchApiKey": {
+          "type": "string",
+          "description": "AnySearch API key for web_search and web_extract; anonymous access is rate-limited."
+        },
+        "wanfangAppKey": {
+          "type": "string",
+          "description": "Wanfang open-platform APP_KEY (ai.wfdata.com)."
+        },
+        "cnkiCommand": {
+          "type": "string",
+          "description": "Command that searches CNKI and prints JSON. Supports {query} and {limit} placeholders; CNKI has no public API."
+        },
+        "nstlCommand": {
+          "type": "string",
+          "description": "Command that searches NSTL through an institutional gateway and prints JSON. NSTL APIs require institutional approval."
+        },
+        "databasePath": {
+          "type": "string",
+          "description": "SQLite knowledge base path (default: ~/.sa/agent/research/research.db)."
+        },
+        "cacheDir": {
+          "type": "string",
+          "description": "Directory for downloaded papers and extracted text."
+        },
+        "workDir": {
+          "type": "string",
+          "description": "Directory for temporary scripts and generated files."
+        },
+        "pdfCommand": {
+          "type": "string",
+          "description": "PDF text extractor: pdftotext, mutool, or a Python executable with PyMuPDF."
+        },
+        "pythonPath": {
+          "type": "string",
+          "description": "Python executable used by python_run."
+        },
+        "latexCommand": {
+          "type": "string",
+          "description": "LaTeX engine or executable used by latex_build."
+        },
+        "maxResults": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 10
+        },
+        "requestTimeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "default": 30000
+        }
+      }
+    },
     "lastChangelogVersion": {
       "type": "string"
     },

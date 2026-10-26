@@ -56,6 +56,10 @@ export const SETTINGS_DEFAULTS = {
 		mode: "on",
 		inlineBudget: 3000,
 	},
+	research: {
+		maxResults: 10,
+		requestTimeoutMs: 30_000,
+	},
 	cacheWarming: "streaming",
 	tuiMode: "fullscreen",
 	fullscreenExitOutput: "transcript",

@@ -56,6 +56,7 @@ import {
 	streamSimple,
 } from "@sa/ai/compat";
 import { getThemeByName, theme } from "../modes/interactive/theme/theme.ts";
+import { resolveResearchSettings } from "../research/settings.ts";
 import { stripFrontmatter } from "../utils/frontmatter.ts";
 import { processImage } from "../utils/image-process.ts";
 import { sleep } from "../utils/sleep.ts";
@@ -3681,6 +3682,7 @@ export class AgentSession {
 			: createAllToolDefinitions(this._cwd, {
 					read: { autoResizeImages },
 					bash: { commandPrefix: shellCommandPrefix, shellPath },
+					research: { getSettings: () => resolveResearchSettings(this.settingsManager.getResearchSettings()) },
 				});
 
 		this._baseToolDefinitions = new Map(
@@ -3709,7 +3711,22 @@ export class AgentSession {
 
 		const defaultActiveToolNames = this._baseToolsOverride
 			? Object.keys(this._baseToolsOverride)
-			: ["read", "bash", "edit", "write"];
+			: [
+					"read",
+					"bash",
+					"edit",
+					"write",
+					"paper_search",
+					"paper_read",
+					"research_note",
+					"experiment_log",
+					"citation",
+					"latex_build",
+					"python_run",
+					"web_search",
+					"web_extract",
+					"web_search_domains",
+				];
 		const baseActiveToolNames = options.activeToolNames ?? defaultActiveToolNames;
 		this._refreshToolRegistry({
 			activeToolNames: baseActiveToolNames,

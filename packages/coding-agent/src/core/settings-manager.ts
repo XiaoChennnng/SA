@@ -18,6 +18,7 @@ import type {
 	MermaidRenderingMode,
 	PackageSource,
 	QuietStartup,
+	ResearchSettings,
 	Settings,
 	ThinkingBudgetsSettings,
 	TransportSetting,
@@ -40,6 +41,7 @@ export type {
 	PackageSource,
 	ProviderRetrySettings,
 	QuietStartup,
+	ResearchSettings,
 	RetrySettings,
 	Settings,
 	TerminalSettings,
@@ -80,7 +82,22 @@ function deepMergeObjects(base: Record<string, unknown>, overrides: Record<strin
 }
 
 /** Tools enabled at startup when `defaultTools` does not change them. */
-export const DEFAULT_TOOL_NAMES: readonly string[] = ["read", "bash", "edit", "write"];
+export const DEFAULT_TOOL_NAMES: readonly string[] = [
+	"read",
+	"bash",
+	"edit",
+	"write",
+	"paper_search",
+	"paper_read",
+	"research_note",
+	"experiment_log",
+	"citation",
+	"latex_build",
+	"python_run",
+	"web_search",
+	"web_extract",
+	"web_search_domains",
+];
 
 /** Whether a tool selection entry is a `+name` or `-name` modifier. */
 export function isToolModifier(entry: unknown): boolean {
@@ -1282,6 +1299,26 @@ export class SettingsManager {
 		this.globalSettings.fullscreenWheelScrollLines =
 			lines === "auto" ? lines : Math.max(1, Math.min(100, Math.floor(lines)));
 		this.markModified("fullscreenWheelScrollLines");
+		this.save();
+	}
+
+	getResearchSettings(): ResearchSettings {
+		return { ...SETTINGS_DEFAULTS.research, ...(this.settings.research ?? {}) };
+	}
+
+	setResearchSetting(key: keyof ResearchSettings, value: string | number | undefined): void {
+		const next = { ...(this.globalSettings.research ?? {}) } as Record<string, unknown>;
+		if (value === undefined || (typeof value === "string" && value.trim() === "")) {
+			delete next[key];
+		} else {
+			next[key] = typeof value === "string" ? value.trim() : value;
+		}
+		if (Object.keys(next).length === 0) {
+			delete this.globalSettings.research;
+		} else {
+			this.globalSettings.research = next as ResearchSettings;
+		}
+		this.markModified("research");
 		this.save();
 	}
 

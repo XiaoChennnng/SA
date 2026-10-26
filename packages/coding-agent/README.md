@@ -12,6 +12,12 @@ Customize SA with [extensions](docs/extensions.md), [skills](docs/skills.md),
 Use SA [interactively](docs/usage.md), automate it in [print or JSON mode](docs/cli.md), control it
 over [RPC](docs/rpc.md), or build apps with the [SA TypeScript SDK](docs/sdk.md).
 
+## Research tools
+
+Seven research tools are enabled by default: `paper_search`, `paper_read`, `research_note`,
+`experiment_log`, `citation`, `latex_build`, and `python_run`. See [Research Workflow](docs/research.md)
+for the literature and experiment loops, storage layout, and system requirements.
+
 ## Getting started
 
 SA requires Node.js 22.19 or newer.

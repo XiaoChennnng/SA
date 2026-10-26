@@ -41,6 +41,21 @@ sa
 Configuration lives under `~/.sa/agent`. Start SA in the directory where you want it to work, run
 `/login` to connect a provider, then give it a task.
 
+## Research tools
+
+SA ships with research tools enabled by default:
+
+- `paper_search` across arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC, OpenAIRE, DOAJ, and HAL, plus Wanfang and configurable CNKI/NSTL commands
+- `web_search` and `web_extract` through AnySearch for web results and full pages
+- `paper_read` for open-access PDFs and abstracts, with page ranges and caching
+- `research_note` and `experiment_log` backed by a local SQLite knowledge base
+- `citation` for BibTeX import, validation, and export
+- `latex_build` and `python_run` for manuscripts and data analysis
+
+PDF text extraction uses `pdftotext`, `mutool`, or Python with PyMuPDF; LaTeX and Python use their
+system installations. Configure APIs and Chinese sources with `/research`. Everything is stored under `~/.sa/agent/research/` and is never uploaded.
+See [Research Workflow](packages/coding-agent/docs/research.md) for usage and settings.
+
 ## Packages
 
 | Package | Description |

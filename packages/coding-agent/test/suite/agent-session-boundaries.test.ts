@@ -535,7 +535,7 @@ describe("AgentSession actionable boundaries", () => {
 		await harness.session.prompt("small prompt");
 
 		expect(harness.eventsOfType("compaction_start")).toEqual([]);
-		expect(harness.session.getContextUsage()?.tokens).toBeLessThan(2_000);
+		expect(harness.session.getContextUsage()?.tokens).toBeLessThan(5_000);
 	});
 
 	it("does not trigger successful-response overflow from usage captured before a boundary edit", async () => {
@@ -572,7 +572,7 @@ describe("AgentSession actionable boundaries", () => {
 		await harness.session.prompt("large input that is later omitted");
 
 		expect(harness.eventsOfType("compaction_start")).toEqual([]);
-		expect(harness.session.getContextUsage()?.tokens).toBeLessThan(2_000);
+		expect(harness.session.getContextUsage()?.tokens).toBeLessThan(5_000);
 	});
 
 	it("does not trigger threshold compaction from post-edit usage captured before a later compaction", async () => {

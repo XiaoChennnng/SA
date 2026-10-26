@@ -9,6 +9,7 @@ Extensions, prompt templates, and skills can add commands. The command menu in S
 | Command | Description |
 |---|---|
 | `/settings` | Open settings |
+| `/research [status\|set <field> <value>\|clear <field>]` | Configure research and web APIs, Chinese sources, and tool commands; API fields link to their key pages |
 | `/model [provider/model]` | Select a model |
 | `/thinking [level]` | Set the thinking level |
 | `/scoped-models` | Configure the models used by interactive cycling |

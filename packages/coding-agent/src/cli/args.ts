@@ -473,5 +473,15 @@ ${chalk.bold("Built-in Tool Names:")}
   grep       - Search file contents (read-only, off by default)
   find       - Find files by glob pattern (read-only, off by default)
   ls         - List directory contents (read-only, off by default)
+  paper_search   - Search international databases and configured Chinese sources
+  paper_read     - Read a paper's full text or abstract
+  research_note  - Save and search research notes
+  experiment_log - Record and compare experiment runs
+  citation       - Manage and export BibTeX citations
+  latex_build    - Compile LaTeX and report diagnostics
+  python_run     - Run Python for data analysis
+  web_search     - Search the web through AnySearch
+  web_extract    - Read a web page through AnySearch
+  web_search_domains - List AnySearch domains and parameters
 `);
 }

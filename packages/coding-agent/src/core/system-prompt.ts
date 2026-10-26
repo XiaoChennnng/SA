@@ -61,7 +61,24 @@ export function normalizeBuildSystemPromptOptions(input: BuildSystemPromptOption
 	return {
 		customPrompt: input.customPrompt,
 		forceSystemPrompt: input.forceSystemPrompt,
-		selectedTools: [...(input.selectedTools ?? ["read", "bash", "edit", "write"])],
+		selectedTools: [
+			...(input.selectedTools ?? [
+				"read",
+				"bash",
+				"edit",
+				"write",
+				"paper_search",
+				"paper_read",
+				"research_note",
+				"experiment_log",
+				"citation",
+				"latex_build",
+				"python_run",
+				"web_search",
+				"web_extract",
+				"web_search_domains",
+			]),
+		],
 		hiddenTools: [...(input.hiddenTools ?? [])],
 		toolSnippets: { ...(input.toolSnippets ?? {}) },
 		toolGuidelines: Object.fromEntries(
@@ -123,6 +140,8 @@ function buildRules(
 	addRule("Never fabricate references, data, or results; say clearly when information is missing");
 	addRule("Keep research work reproducible: state assumptions, parameters, and the commands that produced results");
 	addRule("Distinguish observations from inference and state uncertainty");
+	addRule("For literature work, search, read the source, take notes, and build citations in that order");
+	addRule("For data work, keep scripts and parameters reproducible and log runs with experiment_log");
 	addRule("Be concise in your responses");
 	addRule("Show file paths clearly when working with files");
 	return rules.map((rule) => `- ${rule}`).join("\n");
@@ -168,7 +187,7 @@ export function buildSystemPromptSections(input: BuildSystemPromptOptions): Syst
 - Additional docs: ${getDocsPath()}
 - Examples: ${getExamplesPath()} (extensions, custom tools, SDK)
 - When reading sa docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory
-- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), sa packages (docs/packages.md), environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md), codemode scripts and non-LLM models such as classifiers and image models (docs/codemode.md)
+- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), sa packages (docs/packages.md), environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md), research tools and settings (docs/research.md), codemode scripts and non-LLM models such as classifiers and image models (docs/codemode.md)
 - When working on sa topics, read the docs and examples, and follow .md cross-references before implementing
 - Always read sa .md files completely and follow links to related docs (e.g., tui.md for TUI API details)`;
 	}
