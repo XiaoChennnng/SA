@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Updated `undici` to 8.12.3 to address upstream security advisories in the HTTP client.
+
 ## [0.1.1] - 2026-10-27
 
 ### Added
