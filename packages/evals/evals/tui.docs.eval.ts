@@ -10,7 +10,7 @@ import {
 	createAgentSessionFromServices,
 } from "@sa/science-agent";
 import { createJudge, describeEval } from "vitest-evals";
-import { createPiDocumentationEvalHarness, type SaCodingAgentInput } from "../src/harness.ts";
+import { createSaDocumentationEvalHarness, type SaCodingAgentInput } from "../src/harness.ts";
 
 const CONTEXT_WINDOW = 272_000;
 const BUILT_IN_CONTEXT_PATTERN = /\d+(?:\.\d+)?%\/272k(?: \(auto\))?/;
@@ -200,7 +200,7 @@ async function inspectContextFooter(session: AgentSession, agentDir: string): Pr
 	}
 }
 
-const harness = createPiDocumentationEvalHarness({
+const harness = createSaDocumentationEvalHarness({
 	output: ({ session, agentDir }) => inspectContextFooter(session, agentDir),
 });
 

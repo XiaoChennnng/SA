@@ -179,17 +179,23 @@ describe("post-login model discovery", () => {
 		};
 	}
 
-	it.each([
-		{ models: ["fast", "balanced"], selected: "balanced" },
-		{ models: ["fast", "powerful"], selected: "fast" },
-	])("selects $selected from the refreshed catalog $models", async ({ models, selected }) => {
+	it("selects the default model from the refreshed catalog", async () => {
 		expect(defaultModelPerProvider.radius).toBe("balanced");
 		const login = await startLogin();
-		await login.discover(models);
-		expect(login.setModel).toHaveBeenCalledWith(expect.objectContaining({ provider: "radius", id: selected }), {
+		await login.discover(["fast", "balanced"]);
+		expect(login.setModel).toHaveBeenCalledWith(expect.objectContaining({ provider: "radius", id: "balanced" }), {
 			persist: true,
 		});
 		expect(login.showError).not.toHaveBeenCalled();
+	});
+
+	it("reports when the provider's default model is missing", async () => {
+		const login = await startLogin();
+		await login.discover(["fast", "powerful"]);
+		expect(login.setModel).not.toHaveBeenCalled();
+		expect(login.showError).toHaveBeenCalledWith(
+			expect.stringContaining('default model "balanced" is not available'),
+		);
 	});
 
 	it("reports an empty catalog only after refresh", async () => {

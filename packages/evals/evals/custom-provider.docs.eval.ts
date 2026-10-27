@@ -9,7 +9,7 @@ import {
 	STREAM_PROVIDER_ID,
 } from "./acme-server.ts";
 import { inspectProvider, type ProviderRuntimeOutput } from "./configured-runtime.ts";
-import { createPiDocumentationEvalHarness } from "../src/harness.ts";
+import { createSaDocumentationEvalHarness } from "../src/harness.ts";
 
 const DOCUMENTATION_PATH = "fixtures/acme-stream-api.json";
 const STREAM_API_KEY = "resolved-stream-key";
@@ -42,7 +42,7 @@ const expected: ProviderRuntimeOutput = {
 	},
 };
 
-const harness = createPiDocumentationEvalHarness({
+const harness = createSaDocumentationEvalHarness({
 	workspaceFiles: { [DOCUMENTATION_PATH]: STREAM_API_DOCUMENTATION },
 	output: ({ session }) =>
 		inspectProvider(session.modelRuntime, {

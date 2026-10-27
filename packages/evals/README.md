@@ -112,9 +112,9 @@ Use one ordinary `describeEval(...)` suite and one explicit `run(...)` call per 
 
 ```ts
 import { describeEval, StructuredOutputJudge } from "vitest-evals";
-import { createPiDocumentationEvalHarness } from "../src/harness.ts";
+import { createSaDocumentationEvalHarness } from "../src/harness.ts";
 
-const harness = createPiDocumentationEvalHarness();
+const harness = createSaDocumentationEvalHarness();
 const judge = StructuredOutputJudge({ expected: { ok: true }, match: "strict", allowExtras: false });
 
 describeEval("Target workflow", { harness, judges: [judge], judgeThreshold: null }, (it) => {

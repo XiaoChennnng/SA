@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { buildSystemPrompt } from "../../science-agent/src/core/system-prompt.ts";
 import {
 	applyIsolatedEnvironment,
-	createPiDocumentationEvalHarness,
+	createSaDocumentationEvalHarness,
 	DOCUMENTATION_EVAL_TOOLS,
-	excludePiDocumentation,
+	excludeSaDocumentation,
 	resolveDocumentationVariant,
 	resolveModelSelection,
 	verifySystemPrompt,
@@ -74,12 +74,12 @@ describe("documentation variant", () => {
 			cwd: "/workspace",
 			selectedTools: [...DOCUMENTATION_EVAL_TOOLS],
 		});
-		expect(prompt).toContain("\n<docs>\nPi documentation (read only");
+		expect(prompt).toContain("\n<docs>\nSA documentation (read only");
 		expect(prompt).toContain("\n<rules>\n");
 		expect(prompt).toContain("\n<cwd>\n/workspace\n</cwd>");
 		expect(prompt).toContain("docs/models.md");
 
-		const stripped = excludePiDocumentation(prompt);
+		const stripped = excludeSaDocumentation(prompt);
 		expect(stripped).toContain("\n<rules>\n");
 		expect(stripped).toContain("\n<cwd>\n/workspace\n</cwd>");
 		expect(stripped).not.toContain("<docs>");
@@ -95,22 +95,22 @@ describe("documentation variant", () => {
 			cwd: "/workspace",
 			selectedTools: [...DOCUMENTATION_EVAL_TOOLS],
 		});
-		const stripped = excludePiDocumentation(prompt);
+		const stripped = excludeSaDocumentation(prompt);
 
-		expect(verifySystemPrompt(stripped, { name: "without_docs", expectedPiDocumentation: false })).toBe(stripped);
-		expect(() => verifySystemPrompt(prompt, { name: "without_docs", expectedPiDocumentation: false })).toThrow(
+		expect(verifySystemPrompt(stripped, { name: "without_docs", expectedSaDocumentation: false })).toBe(stripped);
+		expect(() => verifySystemPrompt(prompt, { name: "without_docs", expectedSaDocumentation: false })).toThrow(
 			"does not match",
 		);
 	});
 
 	it("fails closed when prompt markers are missing", () => {
-		expect(() => excludePiDocumentation("Instructions")).toThrow("no SA documentation section");
-		expect(() => excludePiDocumentation("\n<docs>\nPi documentation\n</docs>")).toThrow(
+		expect(() => excludeSaDocumentation("Instructions")).toThrow("no SA documentation section");
+		expect(() => excludeSaDocumentation("\n<docs>\nSA documentation\n</docs>")).toThrow(
 			"no working-directory section",
 		);
 	});
 
 	it("rejects documentation harnesses outside the container sandbox", () => {
-		expect(() => createPiDocumentationEvalHarness()).toThrow("isolated container sandbox");
+		expect(() => createSaDocumentationEvalHarness()).toThrow("isolated container sandbox");
 	});
 });

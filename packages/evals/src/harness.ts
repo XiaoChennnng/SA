@@ -55,7 +55,7 @@ export type SaCodingAgentHarnessOptions = {
 	customTools?: CreateAgentSessionOptions["customTools"];
 	workspaceFiles?: Readonly<Record<string, string>>;
 	transformSystemPrompt?: (defaultPrompt: string) => string;
-	expectedPiDocumentation?: boolean;
+	expectedSaDocumentation?: boolean;
 };
 
 export type SaCodingAgentHarnessWithOutput<TOutput extends JsonValue> = SaCodingAgentHarnessOptions & {
@@ -256,14 +256,14 @@ async function promptAgent(session: AgentSession, input: string, signal: AbortSi
 
 export function verifySystemPrompt(
 	systemPrompt: string,
-	options: Pick<SaCodingAgentHarnessOptions, "name" | "expectedPiDocumentation">,
+	options: Pick<SaCodingAgentHarnessOptions, "name" | "expectedSaDocumentation">,
 ): string {
-	if (options.expectedPiDocumentation === undefined) return systemPrompt;
+	if (options.expectedSaDocumentation === undefined) return systemPrompt;
 	if (!systemPrompt.includes("\n<rules>\n")) {
 		throw new Error(`SA system prompt lost its rules in the ${options.name} eval variant.`);
 	}
-	const hasDocumentation = systemPrompt.includes("\n<docs>\nPi documentation (read only");
-	if (hasDocumentation !== options.expectedPiDocumentation) {
+	const hasDocumentation = systemPrompt.includes("\n<docs>\nSA documentation (read only");
+	if (hasDocumentation !== options.expectedSaDocumentation) {
 		throw new Error(`SA system prompt does not match the ${options.name} eval variant.`);
 	}
 	return systemPrompt;
@@ -491,7 +491,7 @@ export function resolveDocumentationVariant(
 	throw new TypeError('SA_EVAL_VARIANT must be "without_docs" or "with_docs".');
 }
 
-export function excludePiDocumentation(defaultPrompt: string): string {
+export function excludeSaDocumentation(defaultPrompt: string): string {
 	const documentationStartMarker = "\n<docs>\n";
 	const documentationEndMarker = "\n</docs>";
 	const documentationStart = defaultPrompt.indexOf(documentationStartMarker);
@@ -507,20 +507,20 @@ export function excludePiDocumentation(defaultPrompt: string): string {
 
 type DocumentationHarnessOptions = Omit<
 	SaCodingAgentHarnessOptions,
-	"name" | "transformSystemPrompt" | "expectedPiDocumentation"
+	"name" | "transformSystemPrompt" | "expectedSaDocumentation"
 >;
 type DocumentationHarnessWithOutput<TOutput extends JsonValue> = Omit<
 	SaCodingAgentHarnessWithOutput<TOutput>,
-	"name" | "transformSystemPrompt" | "expectedPiDocumentation"
+	"name" | "transformSystemPrompt" | "expectedSaDocumentation"
 >;
 
-export function createPiDocumentationEvalHarness<TOutput extends JsonValue>(
+export function createSaDocumentationEvalHarness<TOutput extends JsonValue>(
 	options: DocumentationHarnessWithOutput<TOutput>,
 ): Harness<SaCodingAgentInput, TOutput>;
-export function createPiDocumentationEvalHarness(
+export function createSaDocumentationEvalHarness(
 	options?: DocumentationHarnessOptions,
 ): Harness<SaCodingAgentInput, string>;
-export function createPiDocumentationEvalHarness<TOutput extends JsonValue>(
+export function createSaDocumentationEvalHarness<TOutput extends JsonValue>(
 	options: DocumentationHarnessOptions | DocumentationHarnessWithOutput<TOutput> = {},
 ) {
 	if (process.env.SA_EVAL_CONTAINER !== "1" || !resolveSandboxIdentity()) {
@@ -531,7 +531,7 @@ export function createPiDocumentationEvalHarness<TOutput extends JsonValue>(
 		...options,
 		name: variant,
 		tools: options.tools ?? [...DOCUMENTATION_EVAL_TOOLS],
-		...(variant === "without_docs" ? { transformSystemPrompt: excludePiDocumentation } : {}),
-		expectedPiDocumentation: variant === "with_docs",
+		...(variant === "without_docs" ? { transformSystemPrompt: excludeSaDocumentation } : {}),
+		expectedSaDocumentation: variant === "with_docs",
 	});
 }
