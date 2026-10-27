@@ -92,7 +92,7 @@
 		"tui",
 		"agent"
 	],
-	"author": "SA contributors",
+	"author": "XiaoChennnng",
 	"license": "MIT",
 	"engines": {
 		"node": ">=22.19.0"

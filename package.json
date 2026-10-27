@@ -2,6 +2,7 @@
 	"name": "sa-monorepo",
 	"private": true,
 	"license": "MIT",
+	"author": "XiaoChennnng",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/XiaoChennnng/SA.git"
