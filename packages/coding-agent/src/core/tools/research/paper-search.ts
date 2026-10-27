@@ -1,10 +1,17 @@
 import type { AgentTool } from "@sa/agent-core";
 import { type Static, Type } from "typebox";
 import { searchPapers } from "../../../research/providers/index.ts";
-import type { PaperSource } from "../../../research/types.ts";
+import type { Paper, PaperSource } from "../../../research/types.ts";
 import type { ExtensionContext, ToolDefinition } from "../../extensions/types.ts";
 import { wrapToolDefinition } from "../tool-definition-wrapper.ts";
-import { formatPaper, type ResearchToolOptions, researchSettingsFor, researchStoreFor } from "./shared.ts";
+import {
+	formatAuthors,
+	formatPaper,
+	type ResearchToolOptions,
+	researchKnowledgeFor,
+	researchSettingsFor,
+	truncateText,
+} from "./shared.ts";
 
 const PAPER_SOURCE_SCHEMA = Type.Union([
 	Type.Literal("arxiv"),
@@ -39,8 +46,7 @@ const paperSearchSchema = Type.Object({
 	),
 	save: Type.Optional(
 		Type.Boolean({
-			description:
-				"Save results to the local research knowledge base for later notes and citations (default: true).",
+			description: "Append results to the local Markdown research knowledge base (default: false).",
 		}),
 	),
 });
@@ -68,6 +74,31 @@ export const paperSearchToolSystemPromptContribution = {
 	],
 } as const;
 
+function paperMarkdown(paper: Paper): string {
+	const lines = [
+		`- Authors: ${formatAuthors(paper.authors)}`,
+		paper.year || paper.venue
+			? `- Year: ${paper.year ?? "unknown"}${paper.venue ? ` · ${paper.venue}` : ""}`
+			: undefined,
+		paper.doi ? `- DOI: ${paper.doi}` : undefined,
+		paper.arxivId ? `- arXiv: ${paper.arxivId}` : undefined,
+		paper.pubmedId ? `- PMID: ${paper.pubmedId}` : undefined,
+		paper.pdfUrl ? `- PDF: ${paper.pdfUrl}` : paper.url ? `- URL: ${paper.url}` : undefined,
+		`- ID: ${paper.id}`,
+	].filter((line): line is string => Boolean(line));
+	const abstract = truncateText(paper.abstract, 1200);
+	if (abstract) lines.push("", abstract);
+	return lines.join("\n");
+}
+
+function alreadySaved(document: string, paper: Paper): boolean {
+	if (document.includes(`## paper: ${paper.title}`.toLowerCase())) return true;
+	const identifiers = [paper.id, paper.doi, paper.arxivId, paper.pubmedId].filter((value): value is string =>
+		Boolean(value),
+	);
+	return identifiers.some((identifier) => document.includes(identifier.toLowerCase()));
+}
+
 export function createPaperSearchToolDefinition(
 	_cwd: string,
 	options?: PaperSearchToolOptions,
@@ -77,7 +108,7 @@ export function createPaperSearchToolDefinition(
 		name: "paper_search",
 		label: "paper_search",
 		description:
-			"Search scholarly literature across arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC, OpenAIRE, DOAJ, and HAL, plus configured sources (Wanfang via APP_KEY, CORE via API key, CNKI and NSTL via local commands). Returns deduplicated papers with DOI, arXiv ID, PMID, venue, citation count, abstract, and open-access PDF links. Results are saved to the local research knowledge base unless save is false.",
+			"Search scholarly literature across arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC, OpenAIRE, DOAJ, and HAL, plus configured sources (Wanfang via APP_KEY, CORE via API key, CNKI and NSTL via local commands). Returns deduplicated papers with DOI, arXiv ID, PMID, venue, citation count, abstract, and open-access PDF links. Set save=true to append new results to research.md.",
 		promptSnippet: paperSearchToolSystemPromptContribution.snippet,
 		promptGuidelines: [...paperSearchToolSystemPromptContribution.guidelines],
 		parameters: paperSearchSchema,
@@ -112,10 +143,14 @@ export function createPaperSearchToolDefinition(
 				},
 			);
 			const savedIds: string[] = [];
-			if (params.save !== false && result.papers.length > 0) {
-				const store = researchStoreFor(options, settings);
+			if (params.save === true && result.papers.length > 0) {
+				const knowledge = researchKnowledgeFor(options, settings);
+				let document = knowledge.read().toLowerCase();
 				for (const paper of result.papers) {
-					store.upsertPaper(paper);
+					if (alreadySaved(document, paper)) continue;
+					const body = paperMarkdown(paper);
+					knowledge.append(`Paper: ${paper.title}`, body);
+					document += `\n## Paper: ${paper.title}\n\n${body}`.toLowerCase();
 					savedIds.push(paper.id);
 				}
 			}
@@ -129,7 +164,7 @@ export function createPaperSearchToolDefinition(
 				lines.push("", "Source errors:");
 				for (const error of result.errors) lines.push(`- ${error.source}: ${error.message}`);
 			}
-			if (savedIds.length > 0) lines.push("", `Saved ${savedIds.length} papers to the research knowledge base.`);
+			if (savedIds.length > 0) lines.push("", `Saved ${savedIds.length} papers to research.md.`);
 			return {
 				content: [{ type: "text", text: lines.join("\n") }],
 				details: { count: result.papers.length, errors: result.errors, savedIds },

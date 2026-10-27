@@ -48,13 +48,13 @@ describe("AgentSession workspace switching", () => {
 		expect(session.getWorkspace().info.kind).toBe("local");
 		expect(session.systemPrompt).not.toContain("<workspace>");
 		expect(session.getResearchSettings().workspaceDir).toBe(join(tempDir, "research", "workspace"));
-		expect(session.getResearchSettings().databasePath).toBe(join(tempDir, "research", "knowledge", "research.db"));
+		expect(session.getResearchSettings().knowledgePath).toBe(join(tempDir, "research", "knowledge", "research.md"));
 		const remote = new FakeRemoteWorkspace();
 		await session.setWorkspace(remote);
 		expect(session.getWorkspace().info.kind).toBe("ssh");
 		expect(session.systemPrompt).toContain("Remote SSH workspace: tester@host:/work");
 		expect(session.getResearchSettings().workspaceDir).toBe("/work/research/workspace");
-		expect(session.getResearchSettings().databasePath).toContain(join(tempDir, "research", "remote"));
+		expect(session.getResearchSettings().knowledgePath).toContain(join(tempDir, "research", "remote"));
 		expect(session.getResearchSettings().cacheDir).toContain(join(tempDir, "research", "remote"));
 		expect(session.getActiveToolNames()).toContain("read");
 		expect(session.getActiveToolNames()).toContain("python_run");

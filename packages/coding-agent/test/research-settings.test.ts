@@ -13,12 +13,12 @@ describe("workspace-derived research settings", () => {
 		const cwd = join(tmpdir(), "sa-research-settings-local");
 		const settings = resolveResearchSettings({}, { localCwd: cwd, workspaceKind: "local", workspaceCwd: cwd });
 		expect(settings.workspaceDir).toBe(join(cwd, "research", "workspace"));
-		expect(settings.databasePath).toBe(join(cwd, "research", "knowledge", "research.db"));
+		expect(settings.knowledgePath).toBe(join(cwd, "research", "knowledge", "research.md"));
 		expect(settings.cacheDir).toBe(join(cwd, "research", "cache"));
 		expect(settings.workDir).toBe(join(cwd, "research", "work"));
 	});
 
-	it("keeps remote research files remote and local database/cache per workspace", () => {
+	it("keeps remote research files remote and local knowledge/cache per workspace", () => {
 		const localCwd = join(tmpdir(), "sa-research-settings-local");
 		const display = "alice@gpu:/data/project";
 		const settings = resolveResearchSettings(
@@ -33,7 +33,7 @@ describe("workspace-derived research settings", () => {
 		);
 		const root = join(localCwd, "research", "remote", remoteKey(display));
 		expect(settings.workspaceDir).toBe("/data/project/research/workspace");
-		expect(settings.databasePath).toBe(join(root, "knowledge", "research.db"));
+		expect(settings.knowledgePath).toBe(join(root, "knowledge", "research.md"));
 		expect(settings.cacheDir).toBe(join(root, "cache"));
 		expect(settings.workDir).toBe(join(root, "work"));
 
@@ -55,7 +55,7 @@ describe("workspace-derived research settings", () => {
 		const remote = resolveResearchSettings(
 			{
 				workspaceDir: "custom/workspace",
-				databasePath: "custom/knowledge.db",
+				knowledgePath: "custom/knowledge.md",
 				cacheDir: absoluteCache,
 			},
 			{
@@ -66,20 +66,20 @@ describe("workspace-derived research settings", () => {
 			},
 		);
 		expect(remote.workspaceDir).toBe("/data/project/custom/workspace");
-		expect(remote.databasePath).toBe(join(localCwd, "custom", "knowledge.db"));
+		expect(remote.knowledgePath).toBe(join(localCwd, "custom", "knowledge.md"));
 		expect(remote.cacheDir).toBe(absoluteCache);
 
 		const local = resolveResearchSettings(
-			{ workspaceDir: "custom/workspace", databasePath: "custom/knowledge.db" },
+			{ workspaceDir: "custom/workspace", knowledgePath: "custom/knowledge.md" },
 			{ localCwd, workspaceKind: "local", workspaceCwd: localCwd },
 		);
 		expect(local.workspaceDir).toBe(join(localCwd, "custom", "workspace"));
-		expect(local.databasePath).toBe(join(localCwd, "custom", "knowledge.db"));
+		expect(local.knowledgePath).toBe(join(localCwd, "custom", "knowledge.md"));
 	});
 
 	it("falls back to the process working directory when no context is provided", () => {
 		const settings = resolveResearchSettings({});
 		expect(settings.workspaceDir).toBe(join(process.cwd(), "research", "workspace"));
-		expect(settings.databasePath).toBe(join(process.cwd(), "research", "knowledge", "research.db"));
+		expect(settings.knowledgePath).toBe(join(process.cwd(), "research", "knowledge", "research.md"));
 	});
 });

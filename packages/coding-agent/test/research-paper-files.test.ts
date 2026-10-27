@@ -18,7 +18,7 @@ function setup() {
 	const dir = mkdtempSync(join(tmpdir(), "sa-paper-files-"));
 	tempDirs.push(dir);
 	const settings = resolveResearchSettings({
-		databasePath: join(dir, "research.db"),
+		knowledgePath: join(dir, "research.md"),
 		cacheDir: join(dir, "cache"),
 		workDir: join(dir, "work"),
 		workspaceDir: join(dir, "workspace"),

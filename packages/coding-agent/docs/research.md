@@ -1,18 +1,18 @@
 # Research Workflow
 
 SA is a Science Agent: its built-in tools cover literature discovery, paper reading, notes,
-experiments, citations, data analysis, and manuscript builds. Everything is stored locally; SA
-never uploads research data.
+experiments, citations, data analysis, and manuscript builds. Everything is stored locally in
+plain Markdown and files; SA never uploads research data.
 
 ## Tools
 
 | Tool | Use it for |
 |---|---|
-| `paper_search` | Search arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC, OpenAIRE, DOAJ, HAL, and configured Chinese sources; deduplicate results and save them locally |
+| `paper_search` | Search arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC, OpenAIRE, DOAJ, HAL, and configured Chinese sources; deduplicate results and optionally append them to `research.md` |
 | `paper_read` | Read a paper by DOI, arXiv ID, PMID, URL, or local file, with page ranges and caching |
-| `research_note` | Save summaries, quotations, ideas, and todos, linked to papers and searchable in full text |
-| `experiment_log` | Record hypotheses, configurations, metrics, artifacts, and compare runs |
-| `citation` | Import BibTeX entries by DOI/arXiv/PMID, validate, list, and export `.bib` files |
+| `research_note` | Append summaries, quotations, ideas, and todos as Markdown sections, and search them by text |
+| `experiment_log` | Append hypotheses, configurations, metrics, and artifacts as Markdown sections, and search them by text |
+| `citation` | Import BibTeX entries by DOI/arXiv/PMID, validate, list, remove, and export `.bib` files |
 | `latex_build` | Compile LaTeX with `latexmk`, `pdflatex`, `xelatex`, or `lualatex` and report diagnostics |
 | `python_run` | Run Python code or scripts with output capture and optional experiment logging |
 | `web_search` | Search the web through AnySearch; returns titles, URLs, snippets, and extracted content |
@@ -31,7 +31,8 @@ These tools are active by default. Remove them from `defaultTools` or disable in
    ID, PMID, venue, citation count, abstract, and open-access PDF links.
 2. `paper_read` on the most relevant IDs. Long papers are returned in page ranges; continue with
    `pageStart` until you have read the sections you need.
-3. `research_note` to record claims, quotations, and contradictions, linked by `paperId`.
+3. `research_note` to append claims, quotations, and contradictions as sections of `research.md`,
+   linked by `paperId`.
 4. `citation` to import the papers you will reference, then `citation` with `action: "export"` to
    write `references.bib`.
 
@@ -40,9 +41,9 @@ These tools are active by default. Remove them from `defaultTools` or disable in
 1. Run analysis with `python_run` or `bash`. Keep the script in the repository.
 2. Record the run with `experiment_log` (`action: "save"`) including configuration, metrics, and
    artifact paths. `python_run` can also record the run directly with `saveExperiment: true`.
-3. Compare runs with `experiment_log` (`action: "compare"` and `ids`). The output includes per-metric
-   values and deltas against the first run.
-4. Write up the result and cite the papers from the citation database.
+3. Search or read previous runs in `research.md` and compare their metric blocks before claiming an
+   improvement; the file is ordinary Markdown, so SA can read and edit it directly.
+4. Write up the result and cite the papers from the citation entries in the knowledge base.
 
 ## Chinese literature
 
@@ -170,17 +171,17 @@ workspace the layout is:
 ```text
 <workspace>/research/
 ├── workspace/                 # research_files, paper_write, manuscripts
-├── knowledge/research.db      # SQLite full-text knowledge base
+├── knowledge/research.md      # free-form Markdown knowledge base
 ├── cache/                     # downloaded PDFs and extracted text
 └── work/                      # temporary scripts and build artifacts
 ```
 
 For an SSH workspace, research files and `paper_write` output live on the remote host under
-`<remote-workspace>/research/workspace`. The SQLite knowledge base, paper cache, and work directory
+`<remote-workspace>/research/workspace`. The Markdown knowledge base, paper cache, and work directory
 stay on the SA host, isolated per remote workspace under
-`<local-workspace>/research/remote/<workspace-hash>/`. This keeps SQLite and PDF extraction local
-while still following the workspace identity. Explicit `databasePath`, `cacheDir`, `workDir`, or
-`workspaceDir` settings override the derived paths.
+`<local-workspace>/research/remote/<workspace-hash>/`. This keeps the knowledge file and PDF
+extraction local while still following the workspace identity. Explicit `knowledgePath`, `cacheDir`,
+`workDir`, or `workspaceDir` settings override the derived paths.
 
 Nothing is uploaded. Deleting a workspace's `research/` directory resets its knowledge base and
 cache.
@@ -208,10 +209,10 @@ the missing items in the conversation after you confirm.
 
 `/ssh user@host:/remote/path` switches the workspace tools to a remote Linux or macOS host. In SSH
 mode, `read`, `write`, `edit`, `grep`, `find`, `ls`, `bash`, `python_run`, `latex_build`,
-`paper_write`, and `research_files` operate on the server. Literature/web search, the note and
-experiment database, and paper caches stay local. Remote research files default to
-`<remote-workspace>/research/workspace`; the local database/cache for that remote workspace live
-under `<local-workspace>/research/remote/<workspace-hash>/`. Use `/doctor` after connecting to check the server's Python,
+`paper_write`, and `research_files` operate on the server. Literature/web search, the Markdown
+knowledge base, and paper caches stay local. Remote research files default to
+`<remote-workspace>/research/workspace`; the local knowledge base/cache for that remote workspace
+live under `<local-workspace>/research/remote/<workspace-hash>/`. Use `/doctor` after connecting to check the server's Python,
 reportlab, LaTeX, fonts, and search tools. See [SSH remote workspace](remote-workspace.md) for setup,
 security, and limitations.
 
@@ -249,7 +250,7 @@ Add a `research` block to `settings.json`:
 | `wanfangAppKey` | — | Wanfang open-platform APP_KEY, enables Chinese journal/thesis/conference search |
 | `cnkiCommand` | — | Local command that searches CNKI and prints JSON; supports `{query}` and `{limit}` |
 | `nstlCommand` | — | Institutional NSTL gateway command that prints JSON; supports `{query}` and `{limit}` |
-| `databasePath` | `<workspace>/research/knowledge/research.db` | SQLite knowledge base; local per workspace even in SSH mode |
+| `knowledgePath` | `<workspace>/research/knowledge/research.md` | Markdown knowledge base; local per workspace even in SSH mode |
 | `cacheDir` | `<workspace>/research/cache` | Downloaded PDFs and extracted text; local per workspace even in SSH mode |
 | `workDir` | `<workspace>/research/work` | Temporary scripts and generated files |
 | `workspaceDir` | `<workspace>/research/workspace` | User-visible research workspace; remote workspace in SSH mode |

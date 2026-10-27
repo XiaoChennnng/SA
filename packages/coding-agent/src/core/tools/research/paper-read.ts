@@ -100,7 +100,6 @@ export function createPaperReadToolDefinition(
 			}
 			const result = await load(reference, {
 				settings,
-				store: options?.store,
 				mode: (params.mode ?? "auto") as PaperReadMode,
 				force: params.force,
 				signal,

@@ -78,8 +78,8 @@ export {
 	formatPaper,
 	formatPaperDetail,
 	type ResearchToolOptions,
+	researchKnowledgeFor,
 	researchSettingsFor,
-	researchStoreFor,
 	truncateText,
 } from "./shared.ts";
 export {

@@ -16,7 +16,7 @@ function settings() {
 	const dir = mkdtempSync(join(tmpdir(), "sa-web-tools-"));
 	tempDirs.push(dir);
 	return resolveResearchSettings({
-		databasePath: join(dir, "research.db"),
+		knowledgePath: join(dir, "research.md"),
 		cacheDir: join(dir, "cache"),
 		workDir: join(dir, "work"),
 		anySearchApiKey: "test-key",

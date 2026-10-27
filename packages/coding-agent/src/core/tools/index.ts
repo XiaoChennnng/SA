@@ -184,7 +184,7 @@ export interface ToolsOptions {
 	grep?: GrepToolOptions;
 	find?: FindToolOptions;
 	ls?: LsToolOptions;
-	/** Shared settings and store for the research tools. */
+	/** Shared settings and knowledge base for the research tools. */
 	research?: ResearchToolOptions;
 }
 

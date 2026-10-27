@@ -1,6 +1,6 @@
+import { getResearchKnowledge, type ResearchKnowledge } from "../../../research/knowledge.ts";
 import { LocalResearchFs, RemoteResearchFs, type ResearchFs } from "../../../research/research-fs.ts";
 import { resolveResearchSettings } from "../../../research/settings.ts";
-import { getResearchStore, type ResearchStore } from "../../../research/store.ts";
 import type { Paper, ResearchSettings } from "../../../research/types.ts";
 import { ResearchWorkspace } from "../../../research/workspace.ts";
 import type { ExtensionContext } from "../../extensions/types.ts";
@@ -9,15 +9,19 @@ export interface ResearchToolOptions {
 	settings?: ResearchSettings;
 	/** Resolve settings at execution time so /research changes apply without a reload. */
 	getSettings?: () => ResearchSettings;
-	store?: ResearchStore;
+	/** Inject a knowledge base for tests or extensions. */
+	knowledge?: ResearchKnowledge;
 }
 
 export function researchSettingsFor(options?: Partial<ResearchToolOptions>): ResearchSettings {
 	return options?.getSettings?.() ?? options?.settings ?? resolveResearchSettings();
 }
 
-export function researchStoreFor(options?: Partial<ResearchToolOptions>, settings?: ResearchSettings): ResearchStore {
-	return options?.store ?? getResearchStore((settings ?? researchSettingsFor(options)).databasePath);
+export function researchKnowledgeFor(
+	options?: Partial<ResearchToolOptions>,
+	settings?: ResearchSettings,
+): ResearchKnowledge {
+	return options?.knowledge ?? getResearchKnowledge((settings ?? researchSettingsFor(options)).knowledgePath);
 }
 
 export function researchWorkspaceFor(

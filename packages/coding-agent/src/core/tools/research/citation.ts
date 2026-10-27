@@ -13,11 +13,12 @@ import {
 	validateBibtex,
 } from "../../../research/bibtex.ts";
 import { detectPaperReference } from "../../../research/identifiers.ts";
+import type { ResearchKnowledge } from "../../../research/knowledge.ts";
 import { lookupPaper } from "../../../research/providers/index.ts";
-import type { CitationRecord, Paper, PaperProviderContext } from "../../../research/types.ts";
+import type { Paper, PaperProviderContext } from "../../../research/types.ts";
 import type { ExtensionContext, ToolDefinition } from "../../extensions/types.ts";
 import { wrapToolDefinition } from "../tool-definition-wrapper.ts";
-import { type ResearchToolOptions, researchSettingsFor, researchStoreFor } from "./shared.ts";
+import { type ResearchToolOptions, researchKnowledgeFor, researchSettingsFor } from "./shared.ts";
 
 const citationSchema = Type.Object({
 	action: Type.Union([
@@ -40,8 +41,8 @@ export type CitationToolInput = Static<typeof citationSchema>;
 
 export interface CitationToolDetails {
 	action: CitationToolInput["action"];
-	citation?: CitationRecord;
-	citations?: CitationRecord[];
+	citation?: BibEntry;
+	citations?: BibEntry[];
 	path?: string;
 	problems?: string[];
 }
@@ -54,7 +55,8 @@ export interface CitationToolOptions extends Partial<ResearchToolOptions> {
 }
 
 export const citationToolSystemPromptContribution = {
-	snippet: "Manage BibTeX citations: import by DOI/arXiv/PMID, list, validate, and export a .bib file",
+	snippet:
+		"Manage BibTeX citations in the Markdown knowledge base: import by DOI/arXiv/PMID, list, validate, and export a .bib file",
 	guidelines: [
 		"Use citation after reading a paper you will reference, and export BibTeX before writing related work",
 		"Do not invent bibliographic entries; every citation should resolve to a DOI, arXiv ID, or PMID",
@@ -73,35 +75,44 @@ function providerContext(options: CitationToolOptions | undefined, signal?: Abor
 	};
 }
 
-function uniqueKey(base: string, store: () => ReturnType<typeof researchStoreFor>): string {
+function citationsFrom(knowledge: ResearchKnowledge): BibEntry[] {
+	const entries: BibEntry[] = [];
+	for (const section of knowledge.sections("Citation")) {
+		const block = /```bibtex[^\n]*\n([\s\S]*?)\n```/.exec(section.body);
+		if (!block) continue;
+		entries.push(...parseBibtex(block[1]!).entries);
+	}
+	return entries;
+}
+
+function findCitation(knowledge: ResearchKnowledge, key: string): BibEntry | undefined {
+	return citationsFrom(knowledge).find((entry) => entry.key === key);
+}
+
+function uniqueKey(base: string, knowledge: ResearchKnowledge): string {
 	let key = base;
 	let suffix = 0;
-	while (store().getCitation(key)) {
+	while (findCitation(knowledge, key)) {
 		suffix += 1;
 		key = `${base}${String.fromCharCode(96 + suffix)}`;
 	}
 	return key;
 }
 
-function citationToEntry(citation: CitationRecord): BibEntry {
-	return { type: citation.type, key: citation.key, fields: citation.fields };
-}
-
-function formatCitation(citation: CitationRecord): string {
-	return `${formatBibtexEntry(citationToEntry(citation))}\n\nPaper: ${citation.paperId ?? "-"}`;
+function formatCitation(entry: BibEntry): string {
+	return formatBibtexEntry(entry).trim();
 }
 
 export function createCitationToolDefinition(
 	cwd: string,
 	options?: CitationToolOptions,
 ): ToolDefinition<typeof citationSchema, CitationToolDetails> {
-	const store = () => researchStoreFor(options);
 	const lookup = options?.lookup ?? lookupPaper;
 	return {
 		name: "citation",
 		label: "citation",
 		description:
-			"Manage BibTeX citations in the local research database. Import a citation by DOI, arXiv ID, or PubMed ID, list and filter entries, validate a .bib file, remove an entry, or export all citations to a .bib file.",
+			"Manage BibTeX citations stored as `## Citation:` sections in the local Markdown knowledge base. Import a citation by DOI, arXiv ID, or PubMed ID, list and filter entries, validate a .bib file, remove an entry, or export all citations to a .bib file.",
 		promptSnippet: citationToolSystemPromptContribution.snippet,
 		promptGuidelines: [...citationToolSystemPromptContribution.guidelines],
 		parameters: citationSchema,
@@ -112,6 +123,7 @@ export function createCitationToolDefinition(
 			_onUpdate,
 			ctx?: ExtensionContext,
 		) {
+			const knowledge = researchKnowledgeFor(options);
 			const toolWorkspace = ctx?.workspace;
 			const remote = toolWorkspace?.info.kind === "ssh";
 			const workDir = toolWorkspace?.info.cwd ?? ctx?.cwd ?? cwd;
@@ -129,33 +141,20 @@ export function createCitationToolDefinition(
 				if (!reference) {
 					throw new Error("citation add accepts a DOI, arXiv ID, or PubMed ID");
 				}
-				let paper = store().findPaper(reference);
-				if (!paper) {
-					paper = await lookup(reference, providerContext(options, signal));
-					if (!paper) throw new Error(`Could not resolve metadata for ${params.identifier}`);
-					store().upsertPaper(paper);
-				}
+				const paper = await lookup(reference, providerContext(options, signal));
+				if (!paper) throw new Error(`Could not resolve metadata for ${params.identifier}`);
 				const baseKey = params.key?.trim() || makeCitationKey(paper);
-				const key = uniqueKey(baseKey, store);
+				const key = uniqueKey(baseKey, knowledge);
 				const entry = paperToBibEntry(paper, key);
-				const now = new Date().toISOString();
-				const citation: CitationRecord = {
-					key,
-					type: entry.type,
-					paperId: paper.id,
-					fields: entry.fields,
-					createdAt: now,
-					updatedAt: now,
-				};
-				store().saveCitation(citation);
+				knowledge.append(`Citation: ${key}`, `\`\`\`bibtex\n${formatCitation(entry)}\n\`\`\``);
 				return {
-					content: [{ type: "text", text: `Added citation.\n\n${formatCitation(citation)}` }],
-					details: { action: "add", citation },
+					content: [{ type: "text", text: `Added citation to ${knowledge.path}.\n\n${formatCitation(entry)}` }],
+					details: { action: "add", citation: entry, path: knowledge.path },
 				};
 			}
 			if (params.action === "get") {
 				if (!params.key?.trim()) throw new Error("citation get requires key");
-				const citation = store().getCitation(params.key);
+				const citation = findCitation(knowledge, params.key);
 				if (!citation) throw new Error(`No citation with key ${params.key}`);
 				return {
 					content: [{ type: "text", text: formatCitation(citation) }],
@@ -164,7 +163,7 @@ export function createCitationToolDefinition(
 			}
 			if (params.action === "remove") {
 				if (!params.key?.trim()) throw new Error("citation remove requires key");
-				const removed = store().deleteCitation(params.key);
+				const removed = knowledge.removeSection(`Citation: ${params.key}`);
 				return {
 					content: [
 						{
@@ -176,10 +175,10 @@ export function createCitationToolDefinition(
 				};
 			}
 			if (params.action === "export") {
-				const citations = store().listCitations();
+				const citations = citationsFrom(knowledge);
 				const file = params.file ?? "references.bib";
 				const path = remote ? toolWorkspace!.resolvePath(file) : resolvePath(workDir, file);
-				const content = formatBibtex(citations.map(citationToEntry));
+				const content = formatBibtex(citations);
 				if (remote) {
 					await toolWorkspace!.mkdir(toolWorkspace!.path.dirname(path));
 					await toolWorkspace!.writeFile(path, content);
@@ -214,7 +213,7 @@ export function createCitationToolDefinition(
 				};
 			}
 			const query = params.query?.trim().toLowerCase();
-			let citations = store().listCitations();
+			let citations = citationsFrom(knowledge);
 			if (query) {
 				citations = citations.filter((citation) => {
 					const haystack = `${citation.key} ${Object.values(citation.fields).join(" ")}`.toLowerCase();
@@ -226,7 +225,7 @@ export function createCitationToolDefinition(
 					? query
 						? `No citations matched "${params.query}".`
 						: "No citations stored yet."
-					: citations.map((citation) => formatBibtexEntry(citationToEntry(citation))).join("\n\n");
+					: citations.map(formatCitation).join("\n\n");
 			return {
 				content: [{ type: "text", text }],
 				details: { action: "list", citations },

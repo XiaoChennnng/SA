@@ -12,7 +12,6 @@ import {
 } from "./identifiers.ts";
 import { downloadPdf, extractPdfText, pdfCachePath, stripHtmlToText } from "./pdf.ts";
 import { lookupPaper } from "./providers/index.ts";
-import type { ResearchStore } from "./store.ts";
 import type { Paper, PaperProviderContext, PaperText, ResearchSettings } from "./types.ts";
 
 export type PaperReadMode = "auto" | "pdf" | "abstract" | "html";
@@ -28,7 +27,6 @@ interface CachedPaperText {
 
 export interface LoadPaperOptions {
 	settings: ResearchSettings;
-	store?: ResearchStore;
 	mode?: PaperReadMode;
 	force?: boolean;
 	signal?: AbortSignal;
@@ -139,22 +137,16 @@ async function resolvePaper(
 	if (detected.kind === "path") return { localPath: detected.value };
 	if (detected.kind === "doi") {
 		const doi = detected.value;
-		const stored = options.store?.findPaper({ doi }) ?? options.store?.getPaper(`doi:${doi}`) ?? undefined;
-		if (stored) return { paper: stored };
 		const paper = await lookupPaper({ doi }, providerContext(options.settings, options.signal));
 		return { paper };
 	}
 	if (detected.kind === "arxiv") {
 		const arxivId = parseArxivId(detected.value) ?? detected.value;
-		const stored = options.store?.findPaper({ arxivId }) ?? options.store?.getPaper(`arxiv:${arxivId}`) ?? undefined;
-		if (stored) return { paper: stored };
 		const paper = await lookupPaper({ arxivId }, providerContext(options.settings, options.signal));
 		return { paper };
 	}
 	if (detected.kind === "pubmed") {
 		const pubmedId = parsePubmedId(detected.value) ?? detected.value;
-		const stored = options.store?.findPaper({ pubmedId }) ?? options.store?.getPaper(`pmid:${pubmedId}`) ?? undefined;
-		if (stored) return { paper: stored };
 		const paper = await lookupPaper({ pubmedId }, providerContext(options.settings, options.signal));
 		return { paper };
 	}
@@ -285,7 +277,6 @@ export async function loadPaperText(reference: string, options: LoadPaperOptions
 	}
 	const paper = resolved.paper;
 	if (!paper) throw new Error(`Could not find a paper for: ${reference}`);
-	options.store?.upsertPaper(paper);
 	if (!options.force) {
 		const cached = readCachedText(options.settings, paper);
 		if (cached) return cached;

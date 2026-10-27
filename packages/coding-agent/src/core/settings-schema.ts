@@ -257,10 +257,10 @@ const ResearchSettingsSchema = Type.Object({
 				"Command that searches NSTL through an institutional gateway and prints JSON. NSTL APIs require institutional approval.",
 		}),
 	),
-	databasePath: Type.Optional(
+	knowledgePath: Type.Optional(
 		Type.String({
 			description:
-				"SQLite knowledge base path (default: <workspace>/research/knowledge/research.db). In SSH workspaces it stays on the SA host under the local workspace.",
+				"Markdown knowledge base path (default: <workspace>/research/knowledge/research.md). In SSH workspaces it stays on the SA host under the local workspace.",
 		}),
 	),
 	cacheDir: Type.Optional(

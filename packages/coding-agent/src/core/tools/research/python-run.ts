@@ -12,7 +12,7 @@ import {
 import type { ExtensionContext, ToolDefinition } from "../../extensions/types.ts";
 import type { ToolWorkspace } from "../../workspace/types.ts";
 import { wrapToolDefinition } from "../tool-definition-wrapper.ts";
-import { type ResearchToolOptions, researchSettingsFor, researchStoreFor } from "./shared.ts";
+import { type ResearchToolOptions, researchKnowledgeFor, researchSettingsFor } from "./shared.ts";
 
 const pythonRunSchema = Type.Object({
 	code: Type.Optional(Type.String({ description: "Python code to run. Provide code or script, not both." })),
@@ -36,7 +36,7 @@ export interface PythonRunToolDetails {
 	durationMs: number;
 	python: string;
 	scriptPath?: string;
-	experimentId?: string;
+	savedExperiment?: string;
 	stdout: string;
 	stderr: string;
 	timedOut: boolean;
@@ -254,21 +254,24 @@ export function createPythonRunToolDefinition(
 			}
 			const durationMs = Date.now() - started;
 			if (signal?.aborted) throw new Error("Operation aborted");
-			let experimentId: string | undefined;
+			let savedExperiment: string | undefined;
 			if (params.saveExperiment) {
-				const experiment = researchStoreFor(options, settings).saveExperiment({
-					name: params.experimentName?.trim() || basename(scriptPath),
-					config: {
-						python: python.command,
-						script: scriptPath,
-						args: params.args ?? [],
-					},
-					metrics: {},
-					artifacts: [],
-					status: result.code === 0 && !result.timedOut ? "completed" : "failed",
-					notes: `exit=${result.code ?? "none"}${result.timedOut ? " timed_out" : ""}\n${clipOutput(result.stdout).slice(-2000)}\n${clipOutput(result.stderr).slice(-2000)}`,
-				});
-				experimentId = experiment.id;
+				const status = result.code === 0 && !result.timedOut ? "completed" : "failed";
+				const name = params.experimentName?.trim() || basename(scriptPath);
+				const body = [
+					`- Date: ${new Date().toISOString()}`,
+					`- Script: ${scriptPath}`,
+					`- Python: ${python.command}`,
+					`- Exit: ${result.code ?? "none"}${result.timedOut ? " (timed out)" : ""}`,
+					"",
+					"### Output",
+					"",
+					"```text",
+					`${clipOutput(result.stdout).slice(-2000)}\n${clipOutput(result.stderr).slice(-2000)}`.trim(),
+					"```",
+				].join("\n");
+				researchKnowledgeFor(options, settings).append(`Experiment [${status}]: ${name}`, body);
+				savedExperiment = name;
 			}
 			const lines = [
 				result.timedOut
@@ -276,7 +279,7 @@ export function createPythonRunToolDefinition(
 					: `Python exited with code ${result.code ?? "unknown"} in ${durationMs}ms.`,
 				`Python: ${python.command}${python.prefixArgs.length ? ` ${python.prefixArgs.join(" ")}` : ""}`,
 				`Script: ${scriptPath}`,
-				experimentId ? `Experiment: ${experimentId}` : undefined,
+				savedExperiment ? `Recorded experiment "${savedExperiment}" in research.md.` : undefined,
 				result.stdout.trim() ? `\nstdout:\n${clipOutput(result.stdout.trim())}` : undefined,
 				result.stderr.trim() ? `\nstderr:\n${clipOutput(result.stderr.trim())}` : undefined,
 			]
@@ -289,7 +292,7 @@ export function createPythonRunToolDefinition(
 					durationMs,
 					python: python.command,
 					scriptPath,
-					experimentId,
+					savedExperiment,
 					stdout: clipOutput(result.stdout),
 					stderr: clipOutput(result.stderr),
 					timedOut: result.timedOut,

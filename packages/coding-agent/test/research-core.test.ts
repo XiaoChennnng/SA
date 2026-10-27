@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -12,6 +12,7 @@ import {
 	parseArxivId,
 	parsePubmedId,
 } from "../src/research/identifiers.ts";
+import { ResearchKnowledge } from "../src/research/knowledge.ts";
 import { parseArxivFeed } from "../src/research/providers/arxiv.ts";
 import { normalizeCnkiOutput, splitCommandLine } from "../src/research/providers/cnki.ts";
 import { parseCrossrefResponse } from "../src/research/providers/crossref.ts";
@@ -19,7 +20,6 @@ import { parseOpenAlexResponse } from "../src/research/providers/openalex.ts";
 import { parsePubmedResponse } from "../src/research/providers/pubmed.ts";
 import { parseSemanticScholarResponse } from "../src/research/providers/semanticscholar.ts";
 import { parseWanfangResponse } from "../src/research/providers/wanfang.ts";
-import { ResearchStore } from "../src/research/store.ts";
 import type { Paper } from "../src/research/types.ts";
 
 const tempDirs: string[] = [];
@@ -91,39 +91,67 @@ describe("BibTeX", () => {
 	});
 });
 
-describe("research store", () => {
-	it("stores papers, notes, experiments, and citations with full-text search", () => {
-		const store = new ResearchStore(join(tempDir(), "research.db"));
+describe("research knowledge", () => {
+	it("does not create the file on read", () => {
+		const path = join(tempDir(), "research.md");
+		const knowledge = new ResearchKnowledge(path);
 		try {
-			store.upsertPaper(PAPER);
-			expect(store.findPaper({ doi: "10.1234/example" })?.title).toBe(PAPER.title);
-			expect(store.searchPapers("recurrent").map((paper) => paper.id)).toEqual([PAPER.id]);
-
-			const note = store.saveNote({
-				content: "Gradient checkpointing reduces memory.",
-				paperId: PAPER.id,
-				tags: ["memory"],
-			});
-			expect(store.searchNotes("checkpointing")[0]?.id).toBe(note.id);
-			expect(store.listNotes()[0]?.paperId).toBe(PAPER.id);
-
-			const first = store.saveExperiment({ name: "baseline", metrics: { accuracy: 0.8 }, config: { lr: 0.1 } });
-			const second = store.saveExperiment({ name: "tuned", metrics: { accuracy: 0.85 }, config: { lr: 0.05 } });
-			expect(store.getExperiment(first.id)?.metrics.accuracy).toBe(0.8);
-			expect(store.searchExperiments("tuned")[0]?.id).toBe(second.id);
-
-			store.saveCitation({
-				key: "vaswani2017attention",
-				type: "article",
-				paperId: PAPER.id,
-				fields: { title: PAPER.title },
-				createdAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString(),
-			});
-			expect(store.getCitation("vaswani2017attention")?.paperId).toBe(PAPER.id);
-			expect(store.deleteCitation("vaswani2017attention")).toBe(true);
+			expect(knowledge.read()).toBe("");
+			expect(knowledge.search("anything")).toEqual([]);
+			expect(knowledge.sections()).toEqual([]);
+			expect(existsSync(path)).toBe(false);
 		} finally {
-			store.close();
+			knowledge.close();
+		}
+	});
+
+	it("appends readable sections and searches them", () => {
+		const path = join(tempDir(), "research.md");
+		const knowledge = new ResearchKnowledge(path);
+		try {
+			knowledge.append(
+				"Paper: Attention",
+				"- DOI: 10.1234/example\nThe dominant sequence transduction models use recurrent networks.",
+			);
+			knowledge.append("Note [summary]: Checkpointing", "- Tags: memory\nGradient checkpointing reduces memory.");
+			knowledge.append("Experiment [completed]: tuned", '### Metrics\n\n```json\n{"accuracy": 0.85}\n```');
+			const document = readFileSync(path, "utf8");
+			expect(document).toContain("# Research Knowledge Base");
+			expect(document).toContain("## Paper: Attention");
+			expect(knowledge.search("recurrent")[0]?.heading).toBe("Paper: Attention");
+			expect(knowledge.search("checkpointing")[0]?.heading).toBe("Note [summary]: Checkpointing");
+			expect(knowledge.search("tuned", { prefix: "Experiment" })[0]?.heading).toBe("Experiment [completed]: tuned");
+			expect(knowledge.search("tuned", { prefix: "Note" })).toEqual([]);
+		} finally {
+			knowledge.close();
+		}
+	});
+
+	it("removes sections and tolerates CRLF files", () => {
+		const path = join(tempDir(), "research.md");
+		const knowledge = new ResearchKnowledge(path);
+		try {
+			writeFileSync(path, "# KB\r\n\r\n## Note: one\r\n\r\nfirst\r\n\r\n## Note: two\r\n\r\nsecond\r\n");
+			expect(knowledge.sections()).toHaveLength(2);
+			expect(knowledge.removeSection("Note: one")).toBe(true);
+			const document = knowledge.read();
+			expect(document).toContain("## Note: two");
+			expect(document).not.toContain("## Note: one");
+			expect(knowledge.removeSection("Note: missing")).toBe(false);
+		} finally {
+			knowledge.close();
+		}
+	});
+
+	it("ignores headings inside fenced code blocks", () => {
+		const path = join(tempDir(), "research.md");
+		writeFileSync(path, "## Experiment: one\n\n```text\n## not a section\n```\n");
+		const knowledge = new ResearchKnowledge(path);
+		try {
+			expect(knowledge.sections()).toHaveLength(1);
+			expect(knowledge.sections()[0]?.body).toContain("## not a section");
+		} finally {
+			knowledge.close();
 		}
 	});
 });

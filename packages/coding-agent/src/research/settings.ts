@@ -20,7 +20,7 @@ export interface ResearchSettingsInput {
 	pdfCommand?: string;
 	pythonPath?: string;
 	latexCommand?: string;
-	databasePath?: string;
+	knowledgePath?: string;
 	cacheDir?: string;
 	workDir?: string;
 	workspaceDir?: string;
@@ -84,7 +84,7 @@ export function resolveResearchSettings(
 		pdfCommand: input.pdfCommand?.trim() || undefined,
 		pythonPath: input.pythonPath?.trim() || undefined,
 		latexCommand: input.latexCommand?.trim() || undefined,
-		databasePath: resolveLocalPath(input.databasePath, join(localRoot, "knowledge", "research.db"), localBase),
+		knowledgePath: resolveLocalPath(input.knowledgePath, join(localRoot, "knowledge", "research.md"), localBase),
 		cacheDir: resolveLocalPath(input.cacheDir, join(localRoot, "cache"), localBase),
 		workDir: resolveLocalPath(input.workDir, join(localRoot, "work"), localBase),
 		workspaceDir:

@@ -355,7 +355,7 @@ async function storageGroup(env: DoctorEnvironment, settings: ResearchSettings):
 				]
 			: [
 					["agent-dir", getAgentDir(), "SA agent directory"],
-					["database", dirname(settings.databasePath), "research database directory"],
+					["knowledge", dirname(settings.knowledgePath), "research knowledge directory"],
 					["cache", settings.cacheDir, "paper cache directory"],
 					["work", settings.workDir, "temporary work directory"],
 					["workspace", settings.workspaceDir, "research workspace"],
@@ -412,7 +412,7 @@ async function localAuxiliaryGroup(settings: ResearchSettings): Promise<DoctorGr
 		}),
 	];
 	for (const [id, path, label] of [
-		["local-database", dirname(settings.databasePath), "Local research database directory"],
+		["local-knowledge", dirname(settings.knowledgePath), "Local research knowledge directory"],
 		["local-cache", settings.cacheDir, "Local paper cache directory"],
 	] as const) {
 		const writable = await env.pathWritable(path);

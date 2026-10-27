@@ -4899,7 +4899,7 @@ export class InteractiveMode {
 						"PDF 提取器 pdftotext 或 mutool",
 						"latexmk/pdflatex/xelatex/lualatex 是否可用",
 						"ssh 客户端与 ssh-keygen",
-						"SA agent 目录、research 数据库/cache/work/workspace 目录是否可写",
+						"SA agent 目录、research 知识库/cache/work/workspace 目录是否可写",
 						"文献/网页 API 的配置项是否已设置（只报告是否设置，绝不输出密钥值）",
 					];
 		const prompt = [

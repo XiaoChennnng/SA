@@ -176,7 +176,7 @@ Python tools. See [Research Workflow](research.md) for usage and system requirem
 | `wanfangAppKey` | string | — | Wanfang open-platform APP_KEY, enables Chinese journal/thesis/conference search |
 | `cnkiCommand` | string | — | Local command that searches CNKI and prints JSON; supports `{query}` and `{limit}` |
 | `nstlCommand` | string | — | Institutional NSTL gateway command that prints JSON; supports `{query}` and `{limit}` |
-| `databasePath` | string | `<workspace>/research/knowledge/research.db` | SQLite knowledge base; local per workspace even in SSH mode |
+| `knowledgePath` | string | `<workspace>/research/knowledge/research.md` | Markdown knowledge base; local per workspace even in SSH mode |
 | `cacheDir` | string | `<workspace>/research/cache` | PDF and extracted-text cache; local per workspace even in SSH mode |
 | `workDir` | string | `<workspace>/research/work` | Temporary scripts and outputs |
 | `workspaceDir` | string | `<workspace>/research/workspace` | Research workspace for papers, notes, data, figures, and manuscripts; remote workspace in SSH mode |
@@ -225,8 +225,8 @@ are session-selectable; SA does not connect automatically on startup. See
 
 Use `/doctor` to check the active workspace (local or SSH) for missing tools. Research storage paths
 are derived from the active workspace unless explicitly set. In SSH mode the research workspace is
-remote (`researchDir`), while the SQLite database, cache, and work directory stay on the SA host
-under `<local-workspace>/research/remote/<workspace-hash>/`.
+remote (`researchDir`), while the Markdown knowledge base, cache, and work directory stay on the SA
+host under `<local-workspace>/research/remote/<workspace-hash>/`.
 
 ## Updates and warnings
 

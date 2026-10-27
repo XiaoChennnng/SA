@@ -102,39 +102,6 @@ export interface PaperText {
 	cached: boolean;
 }
 
-export interface ResearchNote {
-	id: string;
-	kind: "note" | "summary" | "quote" | "idea" | "todo";
-	paperId?: string;
-	title: string;
-	content: string;
-	tags: string[];
-	createdAt: string;
-	updatedAt: string;
-}
-
-export interface ExperimentRun {
-	id: string;
-	name: string;
-	hypothesis?: string;
-	config: Record<string, unknown>;
-	metrics: Record<string, unknown>;
-	artifacts: string[];
-	status: "planned" | "running" | "completed" | "failed";
-	notes?: string;
-	createdAt: string;
-	updatedAt: string;
-}
-
-export interface CitationRecord {
-	key: string;
-	type: string;
-	paperId?: string;
-	fields: Record<string, string>;
-	createdAt: string;
-	updatedAt: string;
-}
-
 export interface ResearchSettings {
 	/** Contact address sent to OpenAlex and PubMed; recommended by both APIs. */
 	mailto?: string;
@@ -150,8 +117,8 @@ export interface ResearchSettings {
 	cnkiCommand?: string;
 	/** Command that searches NSTL through an institutional gateway and prints JSON. */
 	nstlCommand?: string;
-	/** Absolute or `~` path of the SQLite database. */
-	databasePath: string;
+	/** Absolute or `~` path of the Markdown knowledge base. */
+	knowledgePath: string;
 	/** Directory for downloaded PDFs and extracted text. */
 	cacheDir: string;
 	/** Executable or mode used to extract PDF text. */

@@ -10,15 +10,15 @@ import { createPaperReadToolDefinition } from "../src/core/tools/research/paper-
 import { createPaperSearchToolDefinition } from "../src/core/tools/research/paper-search.ts";
 import { createPythonRunToolDefinition } from "../src/core/tools/research/python-run.ts";
 import { createResearchNoteToolDefinition } from "../src/core/tools/research/research-note.ts";
+import { ResearchKnowledge } from "../src/research/knowledge.ts";
 import { resolveResearchSettings } from "../src/research/settings.ts";
-import { ResearchStore } from "../src/research/store.ts";
 import type { Paper, PaperText } from "../src/research/types.ts";
 
 const tempDirs: string[] = [];
-const stores: ResearchStore[] = [];
+const knowledgeBases: ResearchKnowledge[] = [];
 
 afterEach(() => {
-	for (const store of stores.splice(0)) store.close();
+	for (const knowledge of knowledgeBases.splice(0)) knowledge.close();
 	for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
@@ -31,15 +31,15 @@ function tempDir(): string {
 function setup() {
 	const dir = tempDir();
 	const settings = resolveResearchSettings({
-		databasePath: join(dir, "research.db"),
+		knowledgePath: join(dir, "knowledge", "research.md"),
 		cacheDir: join(dir, "cache"),
 		workDir: join(dir, "work"),
 		maxResults: 5,
 		requestTimeoutMs: 5_000,
 	});
-	const store = new ResearchStore(settings.databasePath);
-	stores.push(store);
-	return { dir, settings, store, ctx: {} as unknown as ExtensionToolContext };
+	const knowledge = new ResearchKnowledge(settings.knowledgePath);
+	knowledgeBases.push(knowledge);
+	return { dir, settings, knowledge, ctx: {} as unknown as ExtensionToolContext };
 }
 
 const PAPER: Paper = {
@@ -65,27 +65,37 @@ const TEXT: PaperText = {
 };
 
 describe("research tools", () => {
-	it("searches, saves, and formats papers", async () => {
-		const { settings, store, ctx } = setup();
+	it("searches papers and only saves when asked", async () => {
+		const { settings, knowledge, ctx } = setup();
 		const search = vi.fn(async () => ({
 			papers: [PAPER],
 			errors: [{ source: "pubmed" as const, message: "rate limited" }],
 		}));
-		const definition = createPaperSearchToolDefinition(process.cwd(), { settings, store, search });
-		const result = await definition.execute("call", { query: "attention", limit: 3 }, undefined, undefined, ctx);
-		expect(search).toHaveBeenCalledOnce();
+		const definition = createPaperSearchToolDefinition(process.cwd(), { settings, knowledge, search });
+		const unsaved = await definition.execute("call", { query: "attention", limit: 3 }, undefined, undefined, ctx);
+		expect(unsaved.details?.savedIds).toEqual([]);
+		expect(knowledge.exists()).toBe(false);
+		const result = await definition.execute(
+			"call",
+			{ query: "attention", limit: 3, save: true },
+			undefined,
+			undefined,
+			ctx,
+		);
+		expect(search).toHaveBeenCalledTimes(2);
 		const text = result.content.map((part) => (part.type === "text" ? part.text : "")).join("");
 		expect(text).toContain("Attention Is All You Need");
 		expect(text).toContain("pubmed: rate limited");
 		expect(result.details?.savedIds).toEqual([PAPER.id]);
-		expect(store.getPaper(PAPER.id)?.title).toBe(PAPER.title);
+		const document = knowledge.read();
+		expect(document).toContain(`## Paper: ${PAPER.title}`);
+		expect(document).toContain(PAPER.doi!);
 	});
 
 	it("reads page ranges and reports truncation", async () => {
-		const { settings, store, ctx } = setup();
+		const { settings, ctx } = setup();
 		const definition = createPaperReadToolDefinition(process.cwd(), {
 			settings,
-			store,
 			load: async () => TEXT,
 		});
 		const result = await definition.execute(
@@ -102,18 +112,16 @@ describe("research tools", () => {
 		expect(result.details?.returnedPages).toEqual([2, 3]);
 	});
 
-	it("saves, searches, and lists research notes", async () => {
-		const { settings, store, ctx } = setup();
-		const definition = createResearchNoteToolDefinition(process.cwd(), { settings, store });
-		const saved = await definition.execute(
+	it("saves and searches research notes", async () => {
+		const { settings, knowledge, ctx } = setup();
+		const definition = createResearchNoteToolDefinition(process.cwd(), { settings, knowledge });
+		await definition.execute(
 			"call",
 			{ action: "save", content: "Gradient checkpointing saves memory.", paperId: PAPER.id, tags: ["memory"] },
 			undefined,
 			undefined,
 			ctx,
 		);
-		const noteId = saved.details?.note?.id;
-		expect(noteId).toBeTruthy();
 		const found = await definition.execute(
 			"call",
 			{ action: "search", query: "checkpointing" },
@@ -121,15 +129,17 @@ describe("research tools", () => {
 			undefined,
 			ctx,
 		);
-		expect(found.details?.notes?.[0]?.id).toBe(noteId);
-		const listed = await definition.execute("call", { action: "list", paperId: PAPER.id }, undefined, undefined, ctx);
-		expect(listed.details?.notes).toHaveLength(1);
+		expect(found.details?.sections).toHaveLength(1);
+		expect(found.details?.sections?.[0]?.heading).toContain("Note [note]");
+		const document = knowledge.read();
+		expect(document).toContain(`- Paper: ${PAPER.id}`);
+		expect(document).toContain("- Tags: memory");
 	});
 
-	it("records and compares experiments", async () => {
-		const { settings, store, ctx } = setup();
-		const definition = createExperimentLogToolDefinition(process.cwd(), { settings, store });
-		const first = await definition.execute(
+	it("records and searches experiments", async () => {
+		const { settings, knowledge, ctx } = setup();
+		const definition = createExperimentLogToolDefinition(process.cwd(), { settings, knowledge });
+		await definition.execute(
 			"call",
 			{
 				action: "save",
@@ -142,7 +152,7 @@ describe("research tools", () => {
 			undefined,
 			ctx,
 		);
-		const second = await definition.execute(
+		await definition.execute(
 			"call",
 			{
 				action: "save",
@@ -155,27 +165,17 @@ describe("research tools", () => {
 			undefined,
 			ctx,
 		);
-		const firstId = first.details?.experiment?.id;
-		const secondId = second.details?.experiment?.id;
-		expect(firstId && secondId).toBeTruthy();
-		const compared = await definition.execute(
-			"call",
-			{ action: "compare", ids: [firstId!, secondId!] },
-			undefined,
-			undefined,
-			ctx,
-		);
-		const text = compared.content.map((part) => (part.type === "text" ? part.text : "")).join("");
-		expect(text).toContain("accuracy");
-		expect(text).toContain("+0.05");
-		expect(text).toContain("6.2%");
+		const found = await definition.execute("call", { action: "search", query: "tuned" }, undefined, undefined, ctx);
+		expect(found.details?.sections).toHaveLength(1);
+		expect(found.details?.sections?.[0]?.heading).toBe("Experiment [completed]: tuned");
+		expect(knowledge.read()).toContain('"accuracy": 0.85');
 	});
 
-	it("adds, exports, and validates BibTeX citations", async () => {
-		const { dir, settings, store, ctx } = setup();
+	it("adds, lists, exports, validates, and removes BibTeX citations", async () => {
+		const { dir, settings, knowledge, ctx } = setup();
 		const definition = createCitationToolDefinition(dir, {
 			settings,
-			store,
+			knowledge,
 			lookup: async () => PAPER,
 		});
 		const added = await definition.execute(
@@ -185,7 +185,10 @@ describe("research tools", () => {
 			undefined,
 			ctx,
 		);
-		expect(added.details?.citation?.key).toMatch(/^vaswani2017/);
+		const key = added.details?.citation?.key;
+		expect(key).toMatch(/^vaswani2017/);
+		const listed = await definition.execute("call", { action: "list" }, undefined, undefined, ctx);
+		expect(listed.details?.citations).toHaveLength(1);
 		const exported = await definition.execute("call", { action: "export" }, undefined, undefined, ctx);
 		const path = exported.details?.path;
 		expect(path).toBeTruthy();
@@ -193,6 +196,11 @@ describe("research tools", () => {
 		expect(readFileSync(path, "utf8")).toContain("@article{vaswani2017");
 		const validated = await definition.execute("call", { action: "validate", file: path }, undefined, undefined, ctx);
 		expect(validated.details?.problems).toEqual([]);
+		if (!key) throw new Error("missing citation key");
+		const removed = await definition.execute("call", { action: "remove", key }, undefined, undefined, ctx);
+		const removedText = removed.content.map((part) => (part.type === "text" ? part.text : "")).join("");
+		expect(removedText).toContain("Removed citation");
+		expect(knowledge.read()).not.toContain(`## Citation: ${key}`);
 	});
 
 	it("compiles LaTeX through an injected runner", async () => {
@@ -211,11 +219,11 @@ describe("research tools", () => {
 		expect(result.details?.pdfPath).toBe(join(dir, "main.pdf"));
 	});
 
-	it("runs Python through an injected interpreter and logs the experiment", async () => {
-		const { settings, store, ctx } = setup();
+	it("runs Python through an injected interpreter and records the experiment", async () => {
+		const { settings, knowledge, ctx } = setup();
 		const definition = createPythonRunToolDefinition(process.cwd(), {
 			settings,
-			store,
+			knowledge,
 			isAvailable: () => true,
 			run: async () => ({ code: 0, stdout: "accuracy=0.9\n", stderr: "", timedOut: false }),
 		});
@@ -228,10 +236,7 @@ describe("research tools", () => {
 		);
 		expect(result.details?.exitCode).toBe(0);
 		expect(result.details?.stdout).toContain("accuracy=0.9");
-		expect(result.details?.experimentId).toBeTruthy();
-		const experimentId = result.details?.experimentId;
-		expect(experimentId).toBeTruthy();
-		if (!experimentId) throw new Error("missing experiment id");
-		expect(store.getExperiment(experimentId)?.name).toBe("python check");
+		expect(result.details?.savedExperiment).toBe("python check");
+		expect(knowledge.read()).toContain("Experiment [completed]: python check");
 	});
 });

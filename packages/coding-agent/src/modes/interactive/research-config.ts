@@ -112,11 +112,11 @@ export const RESEARCH_CONFIG_FIELDS: readonly ResearchConfigField[] = [
 		aliases: ["workspace", "files"],
 	},
 	{
-		id: "database-path",
+		id: "knowledge-path",
 		label: "Knowledge base path",
-		description: "SQLite file for papers, notes, experiments, and citations.",
-		settingKey: "databasePath",
-		aliases: ["db", "database"],
+		description: "Markdown file for papers, notes, experiments, and citations.",
+		settingKey: "knowledgePath",
+		aliases: ["knowledge", "kb"],
 	},
 	{
 		id: "cache-dir",

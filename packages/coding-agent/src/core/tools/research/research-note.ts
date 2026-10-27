@@ -1,18 +1,12 @@
 import type { AgentTool } from "@sa/agent-core";
 import { type Static, Type } from "typebox";
-import type { ResearchNote } from "../../../research/types.ts";
+import type { KnowledgeSection } from "../../../research/knowledge.ts";
 import type { ExtensionContext, ToolDefinition } from "../../extensions/types.ts";
 import { wrapToolDefinition } from "../tool-definition-wrapper.ts";
-import { type ResearchToolOptions, researchStoreFor } from "./shared.ts";
+import { type ResearchToolOptions, researchKnowledgeFor } from "./shared.ts";
 
 const researchNoteSchema = Type.Object({
-	action: Type.Union([
-		Type.Literal("save"),
-		Type.Literal("search"),
-		Type.Literal("list"),
-		Type.Literal("get"),
-		Type.Literal("delete"),
-	]),
+	action: Type.Union([Type.Literal("save"), Type.Literal("search")]),
 	content: Type.Optional(Type.String({ description: "Note body for action=save." })),
 	title: Type.Optional(Type.String({ description: "Short title for action=save." })),
 	kind: Type.Optional(
@@ -31,10 +25,9 @@ const researchNoteSchema = Type.Object({
 	),
 	paperId: Type.Optional(Type.String({ description: "Link the note to a paper ID returned by paper_search." })),
 	tags: Type.Optional(Type.Array(Type.String(), { description: "Free-form tags." })),
-	id: Type.Optional(Type.String({ description: "Note ID for get/delete/update." })),
-	query: Type.Optional(Type.String({ description: "Full-text query for action=search." })),
+	query: Type.Optional(Type.String({ description: "Case-insensitive text query for action=search." })),
 	limit: Type.Optional(
-		Type.Integer({ minimum: 1, maximum: 100, description: "Maximum notes to return (default: 10)." }),
+		Type.Integer({ minimum: 1, maximum: 100, description: "Maximum sections to return (default: 10)." }),
 	),
 });
 
@@ -42,40 +35,38 @@ export type ResearchNoteToolInput = Static<typeof researchNoteSchema>;
 
 export interface ResearchNoteToolDetails {
 	action: ResearchNoteToolInput["action"];
-	note?: ResearchNote;
-	notes?: ResearchNote[];
-	deleted?: boolean;
+	path: string;
+	sections?: KnowledgeSection[];
 }
 
 export interface ResearchNoteToolOptions extends Partial<ResearchToolOptions> {}
 
 export const researchNoteToolSystemPromptContribution = {
-	snippet: "Save and search research notes linked to papers, experiments, and tags",
+	snippet: "Append and search notes in the Markdown research knowledge base",
 	guidelines: [
 		"Use research_note to persist durable findings, decisions, and verbatim quotes instead of relying on conversation memory",
-		"Link notes to a paper ID or experiment when possible, and record uncertainty or contradictions explicitly",
+		"Notes are plain Markdown sections in research.md; link them to a paper or experiment and record uncertainty explicitly",
 	],
 } as const;
 
-function formatNote(note: ResearchNote, index?: number): string {
-	const prefix = index === undefined ? "" : `${index + 1}. `;
-	const lines = [`${prefix}[${note.kind}] ${note.title}`, `ID: ${note.id}`];
-	if (note.paperId) lines.push(`Paper: ${note.paperId}`);
-	if (note.tags.length > 0) lines.push(`Tags: ${note.tags.join(", ")}`);
-	lines.push(`Updated: ${note.updatedAt}`, "", note.content);
-	return lines.join("\n");
+function firstLine(content: string): string {
+	return content.trim().split("\n")[0]?.slice(0, 80).trim() ?? "";
+}
+
+function formatSection(section: KnowledgeSection): string {
+	const body = section.body.length > 4000 ? `${section.body.slice(0, 4000).trimEnd()}…` : section.body;
+	return `## ${section.heading}\n\n${body}`;
 }
 
 export function createResearchNoteToolDefinition(
 	_cwd: string,
 	options?: ResearchNoteToolOptions,
 ): ToolDefinition<typeof researchNoteSchema, ResearchNoteToolDetails> {
-	const store = () => researchStoreFor(options);
 	return {
 		name: "research_note",
 		label: "research_note",
 		description:
-			"Manage a local, full-text-searchable research notebook. Save notes, summaries, quotations, ideas, and todos; link them to papers or experiments; then search or list them later.",
+			"Append or search notes in the local Markdown research knowledge base (research.md). Notes become ordinary `##` sections, so they remain readable and editable with normal file tools.",
 		promptSnippet: researchNoteToolSystemPromptContribution.snippet,
 		promptGuidelines: [...researchNoteToolSystemPromptContribution.guidelines],
 		parameters: researchNoteSchema,
@@ -86,65 +77,32 @@ export function createResearchNoteToolDefinition(
 			_onUpdate,
 			_ctx?: ExtensionContext,
 		) {
+			const knowledge = researchKnowledgeFor(options);
 			if (params.action === "save") {
 				if (!params.content?.trim()) throw new Error("research_note save requires content");
-				const note = store().saveNote({
-					id: params.id,
-					kind: params.kind,
-					paperId: params.paperId,
-					title: params.title,
-					content: params.content,
-					tags: params.tags,
-				});
+				const kind = params.kind ?? "note";
+				const title = params.title?.trim() || firstLine(params.content) || "Untitled note";
+				const meta = [
+					`- Date: ${new Date().toISOString()}`,
+					params.paperId ? `- Paper: ${params.paperId}` : undefined,
+					params.tags && params.tags.length > 0 ? `- Tags: ${params.tags.join(", ")}` : undefined,
+				].filter((line): line is string => Boolean(line));
+				knowledge.append(`Note [${kind}]: ${title}`, `${meta.join("\n")}\n\n${params.content.trim()}`);
 				return {
-					content: [{ type: "text", text: `Saved research note.\n\n${formatNote(note)}` }],
-					details: { action: "save", note },
+					content: [{ type: "text", text: `Saved note "${title}" to ${knowledge.path}.` }],
+					details: { action: "save", path: knowledge.path },
 				};
 			}
-			if (params.action === "search") {
-				if (!params.query?.trim()) throw new Error("research_note search requires query");
-				let notes = store().searchNotes(params.query, params.limit ?? 10);
-				if (params.paperId) notes = notes.filter((note) => note.paperId === params.paperId);
-				const text =
-					notes.length === 0
-						? `No notes matched "${params.query}".`
-						: `Found ${notes.length} note(s) for "${params.query}":\n\n${notes.map((note, index) => formatNote(note, index)).join("\n\n")}`;
-				return {
-					content: [{ type: "text", text }],
-					details: { action: "search", notes },
-				};
-			}
-			if (params.action === "list") {
-				let notes = store().listNotes(params.limit ?? 20);
-				if (params.paperId) notes = notes.filter((note) => note.paperId === params.paperId);
-				const text =
-					notes.length === 0
-						? "No research notes yet."
-						: `${notes.length} note(s):\n\n${notes.map((note, index) => formatNote(note, index)).join("\n\n")}`;
-				return {
-					content: [{ type: "text", text }],
-					details: { action: "list", notes },
-				};
-			}
-			if (params.action === "get") {
-				if (!params.id?.trim()) throw new Error("research_note get requires id");
-				const note = store().getNote(params.id);
-				if (!note) throw new Error(`No research note with id ${params.id}`);
-				return {
-					content: [{ type: "text", text: formatNote(note) }],
-					details: { action: "get", note },
-				};
-			}
-			if (!params.id?.trim()) throw new Error("research_note delete requires id");
-			const deleted = store().deleteNote(params.id);
+			if (!params.query?.trim()) throw new Error("research_note search requires query");
+			let sections = knowledge.search(params.query, { prefix: "Note", limit: params.limit ?? 10 });
+			if (params.paperId) sections = sections.filter((section) => section.body.includes(params.paperId!));
+			const text =
+				sections.length === 0
+					? `No notes matched "${params.query}".`
+					: `Found ${sections.length} note section(s) for "${params.query}":\n\n${sections.map(formatSection).join("\n\n")}`;
 			return {
-				content: [
-					{
-						type: "text",
-						text: deleted ? `Deleted research note ${params.id}.` : `No research note with id ${params.id}.`,
-					},
-				],
-				details: { action: "delete", deleted },
+				content: [{ type: "text", text }],
+				details: { action: "search", path: knowledge.path, sections },
 			};
 		},
 	};
