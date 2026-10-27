@@ -1,10 +1,7 @@
 name: Nix
 
-# The flake builds with the model catalog revision pinned in
-# nix/model-catalog.json. This fork uses that committed pin as-is and does not
-# fetch catalogs from an upstream service.
-#
-# Release tags are built exactly as tagged, with their committed pin.
+# Nix builds from the model data committed in packages/ai. This fork does not
+# fetch a hosted model catalog.
 
 on:
   push:
@@ -20,7 +17,8 @@ on:
       - 'package-lock.json'
       - 'packages/*/package.json'
       - 'packages/science-agent/install-lock/**'
-      - 'packages/ai/scripts/hydrate-model-catalog.ts'
+      - 'packages/ai/src/models.generated.ts'
+      - 'packages/ai/src/providers/data/**'
   # Catches packaging drift from changes pushed to main without a pull request.
   schedule:
     - cron: '43 5 * * *'
@@ -33,35 +31,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  pin:
-    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      revision: ${{ steps.pin.outputs.revision }}
-      updated: ${{ steps.pin.outputs.updated }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 22
-
-      - name: Read committed model catalog pin
-        id: pin
-        run: |
-          set -euo pipefail
-          revision="$(node -p 'require("./nix/model-catalog.json").revision')"
-          echo "revision=${revision}" >> "${GITHUB_OUTPUT}"
-          echo "updated=false" >> "${GITHUB_OUTPUT}"
-
   build:
-    needs: pin
     strategy:
       fail-fast: false
       matrix:
@@ -80,12 +50,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      - name: Use the resolved model catalog pin
-        env:
-          REVISION: ${{ needs.pin.outputs.revision }}
-        run: |
-          printf '{\n  "revision": "%s"\n}\n' "${REVISION}" > nix/model-catalog.json
 
       - name: Install Nix
         uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
@@ -124,40 +88,3 @@ jobs:
       # never moves back to an older release.
       - name: Fast-forward stable to the release
         run: git push origin "${GITHUB_SHA}:refs/heads/stable"
-
-  commit-pin:
-    needs:
-      - pin
-      - build
-    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.pin.outputs.updated == 'true' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: main
-
-      - name: Commit and push the model catalog pin
-        env:
-          REVISION: ${{ needs.pin.outputs.revision }}
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          printf '{\n  "revision": "%s"\n}\n' "${REVISION}" > nix/model-catalog.json
-          git add nix/model-catalog.json
-          if git diff --staged --quiet; then
-            echo "Model catalog pin is already ${REVISION}."
-            exit 0
-          fi
-          git commit -m "chore: update Nix model catalog pin"
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
-              exit 0
-            fi
-            sleep $((attempt * 5))
-            git pull --rebase origin main
-          done
-          exit 1

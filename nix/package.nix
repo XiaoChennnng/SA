@@ -21,13 +21,6 @@ let
   # runtime dependency tree and is kept in sync with package-lock.json by
   # `npm run check`.
   installLock = source + "/packages/science-agent/install-lock";
-  modelCatalogPin = lib.importJSON ./model-catalog.json;
-  modelCatalog = fetchurl {
-    name = "sa-model-catalog.json";
-    # The typed catalog is the representation whose bytes the revision hashes.
-    url = "https://catalog.invalid/api/models/revisions/${modelCatalogPin.revision}?types=chat,image,classifier";
-    sha256 = lib.removePrefix "sha256-" modelCatalogPin.revision;
-  };
 
   workspacePackages = stdenv.mkDerivation {
     pname = "sa-workspace-packages";
@@ -44,7 +37,6 @@ let
 
     buildPhase = ''
       runHook preBuild
-      node packages/ai/scripts/hydrate-model-catalog.ts ${modelCatalog}
       npm run build:offline
       runHook postBuild
     '';
