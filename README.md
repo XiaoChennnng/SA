@@ -10,18 +10,41 @@ SA（Science Agent）是一个面向科研工作的终端智能体。它直接�
 
 SA 基于 [Pi](https://github.com/earendil-works/pi) 的开源架构，针对科研场景重新设计了工具链、存储和工作区模型。CLI 命令为 `sa`，配置位于 `~/.sa/agent`。
 
-## 快速开始
+## 安装
 
-需要 Node.js 22.19 或更高版本。
+不需要 Node.js。直接安装对应平台的预编译二进制：
+
+**macOS / Linux**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/XiaoChennnng/SA/main/install.sh | sh
+```
+
+**Windows PowerShell**
+
+```powershell
+irm https://raw.githubusercontent.com/XiaoChennnng/SA/main/install.ps1 | iex
+```
+
+安装脚本会自动识别系统和架构，从 [Releases](https://github.com/XiaoChennnng/SA/releases) 下载并校验 SHA256，安装到 `~/.local/bin`（Windows 为 `%LOCALAPPDATA%\SA`）。也可以手动下载 `sa-darwin-arm64.tar.gz`、`sa-linux-x64.tar.gz`、`sa-windows-x64.zip` 等资产。
+
+安装完成后，在要工作的目录中运行：
+
+```bash
+sa
+```
+
+首次运行使用 `/login` 连接模型服务，然后直接提出任务。重新运行安装脚本即可升级。
+
+可选环境变量：`SA_VERSION=v0.1.0` 指定版本；macOS/Linux 可用 `SA_BIN_DIR`、`SA_DATA_DIR` 指定安装位置，Windows 可用 `SA_INSTALL_DIR`。
+
+## 从源码运行
+
+需要 Node.js 22.19 或更高版本，适合开发和贡献：
 
 ```bash
 npm install --ignore-scripts
 npm run build
-```
-
-从源码运行：
-
-```bash
 ./sa-test.sh              # macOS/Linux
 sa-test.bat               # Windows
 ```
@@ -32,8 +55,6 @@ sa-test.bat               # Windows
 npm link ./packages/science-agent --ignore-scripts
 sa
 ```
-
-在要工作的目录中启动 SA，运行 `/login` 连接模型服务，然后直接提出任务。
 
 ## 核心工作流
 
@@ -148,4 +169,4 @@ npm run check                 # 格式、lint、类型和入口检查
 
 ## 许可
 
-MIT。SA 基于 Pi，Copyright (c) Mario Zechner and contributors；SA 贡献者版权见 [LICENSE](LICENSE)。
+MIT。SA 基于 Pi，Copyright (c) Mario Zechner and contributors；SA 部分 Copyright (c) XiaoChennnng，详见 [LICENSE](LICENSE)。

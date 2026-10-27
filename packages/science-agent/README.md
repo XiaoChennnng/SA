@@ -1,6 +1,6 @@
 # SA
 
-SA（Science Agent）是面向科研工作的终端智能体，基于 Pi 改进。完整介绍、相对 Pi 的改进列表和快速开始见仓库根目录的 [README](../../README.md)。
+SA（Science Agent）是面向科研工作的终端智能体，基于 Pi 改进。完整介绍和安装说明见仓库根目录的 [README](../../README.md)。
 
 本包是 SA 的主应用包 `@sa/science-agent`，提供 CLI、交互/打印/JSON/RPC 模式、会话运行时、工具、扩展和研究栈。
 
@@ -12,7 +12,25 @@ SA（Science Agent）是面向科研工作的终端智能体，基于 Pi 改进�
 
 详见 [Research Workflow](docs/research.md)、[Context Files](docs/configuration.md#memory-files) 和 [SSH remote workspace](docs/remote-workspace.md)。
 
-## 快速开始
+## 安装
+
+不需要 Node.js，直接安装预编译二进制：
+
+**macOS / Linux**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/XiaoChennnng/SA/main/install.sh | sh
+```
+
+**Windows PowerShell**
+
+```powershell
+irm https://raw.githubusercontent.com/XiaoChennnng/SA/main/install.ps1 | iex
+```
+
+安装后运行 `sa`，首次使用 `/login` 连接模型服务。配置位于 `~/.sa/agent`。
+
+## 从源码运行
 
 需要 Node.js 22.19 或更高版本。在仓库根目录：
 
@@ -30,8 +48,6 @@ npm link ./packages/science-agent --ignore-scripts
 sa
 ```
 
-配置位于 `~/.sa/agent`。启动后运行 `/login` 连接模型服务。
-
 ## 开发
 
 ```bash
@@ -44,4 +60,4 @@ npm run check
 
 ## 许可
 
-MIT。SA 基于 Pi，Copyright (c) Mario Zechner and contributors；SA 贡献者版权见 [LICENSE](../../LICENSE)。
+MIT。SA 基于 Pi，Copyright (c) Mario Zechner and contributors；SA 部分 Copyright (c) XiaoChennnng，详见 [LICENSE](../../LICENSE)。
