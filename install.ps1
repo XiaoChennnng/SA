@@ -10,10 +10,12 @@ $Repo = if ($env:SA_REPO) { $env:SA_REPO } else { "XiaoChennnng/SA" }
 $Version = if ($env:SA_VERSION) { $env:SA_VERSION } else { "latest" }
 $InstallDir = if ($env:SA_INSTALL_DIR) { $env:SA_INSTALL_DIR } else { Join-Path $env:LOCALAPPDATA "SA" }
 
-$architecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
+# Windows PowerShell 5.1 can resolve RuntimeInformation to a PSReadLine type whose
+# OSArchitecture is null, so read the architecture from the environment instead.
+$architecture = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
 $arch = switch ($architecture) {
-	"X64" { "x64" }
-	"Arm64" { "arm64" }
+	"AMD64" { "x64" }
+	"ARM64" { "arm64" }
 	default { throw "Unsupported architecture: $architecture. Download a release manually from https://github.com/$Repo/releases" }
 }
 

@@ -5,6 +5,7 @@
 ### Fixed
 
 - Updated `undici` to 8.12.3 to address upstream security advisories in the HTTP client.
+- `install.ps1` detects the Windows architecture from `PROCESSOR_ARCHITECTURE`, fixing the null `RuntimeInformation.OSArchitecture` error in Windows PowerShell 5.1 on Windows 11.
 
 ## [0.1.1] - 2026-10-27
 
