@@ -3,13 +3,13 @@
  * Live probe for OpenAI Codex Responses websocket-cached mode.
  *
  * Runs a simple tool loop directly against the sa-ai provider source so it does not
- * depend on built dist packages or coding-agent SDK wiring.
+ * depend on built dist packages or science-agent SDK wiring.
  */
 
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Type } from "typebox";
-import { ModelRuntime } from "../../coding-agent/src/core/model-runtime.ts";
+import { ModelRuntime } from "../../science-agent/src/core/model-runtime.ts";
 import {
 	closeOpenAICodexWebSocketSessions,
 	getOpenAICodexWebSocketDebugStats,
@@ -170,7 +170,7 @@ async function main(): Promise<void> {
 	const apiKey =
 		(await modelRuntime.getAuth("openai-codex"))?.auth.apiKey ?? (await modelRuntime.getAuth("openai"))?.auth.apiKey;
 	if (!apiKey) {
-		throw new Error("No OpenAI Codex API key found in coding-agent auth storage.");
+		throw new Error("No OpenAI Codex API key found in science-agent auth storage.");
 	}
 	const context = normalizeContext({
 		systemPrompt:

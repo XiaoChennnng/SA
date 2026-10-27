@@ -40,7 +40,7 @@
 		"typescript",
 		"cli"
 	],
-	"author": "Mario Zechner",
+	"author": "SA contributors",
 	"license": "MIT",
 	"engines": {
 		"node": ">=22.19.0"

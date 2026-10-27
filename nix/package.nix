@@ -16,11 +16,11 @@
 
 let
   nodejs = nodejs_22;
-  packageJson = lib.importJSON (source + "/packages/coding-agent/package.json");
-  # Lockfile root for the packaged installer. It pins the coding agent's
+  packageJson = lib.importJSON (source + "/packages/science-agent/package.json");
+  # Lockfile root for the packaged installer. It pins the science agent's
   # runtime dependency tree and is kept in sync with package-lock.json by
   # `npm run check`.
-  installLock = source + "/packages/coding-agent/install-lock";
+  installLock = source + "/packages/science-agent/install-lock";
   modelCatalogPin = lib.importJSON ./model-catalog.json;
   modelCatalog = fetchurl {
     name = "sa-model-catalog.json";
@@ -68,7 +68,7 @@ let
       pack_package packages/agent agent
       pack_package packages/codemode codemode
       pack_package packages/mcp mcp
-      pack_package packages/coding-agent coding-agent
+      pack_package packages/science-agent science-agent
 
       runHook postInstall
     '';
@@ -82,7 +82,7 @@ let
       "node_modules/@sa/agent-core" = workspacePackages + "/agent.tgz";
       "node_modules/@sa/ai" = workspacePackages + "/ai.tgz";
       "node_modules/@sa/codemode" = workspacePackages + "/codemode.tgz";
-      "node_modules/@sa/coding-agent" = workspacePackages + "/coding-agent.tgz";
+      "node_modules/@sa/science-agent" = workspacePackages + "/science-agent.tgz";
       "node_modules/@sa/mcp" = workspacePackages + "/mcp.tgz";
       "node_modules/@sa/telemetry" = workspacePackages + "/telemetry.tgz";
       "node_modules/@sa/tui" = workspacePackages + "/tui.tgz";
@@ -123,7 +123,7 @@ stdenv.mkDerivation {
     # bash tool keep the user's node/npm (e.g. from mise or nvm). fd, ripgrep,
     # and the clipboard tools are SA's own dependencies and take precedence.
     makeWrapper ${nodejs}/bin/node "$out/bin/sa" \
-      --add-flags "$out/lib/sa/node_modules/@sa/coding-agent/dist/bundle/cli.js" \
+      --add-flags "$out/lib/sa/node_modules/@sa/science-agent/dist/bundle/cli.js" \
       --suffix PATH : ${lib.makeBinPath [ nodejs ]} \
       --prefix PATH : ${
         lib.makeBinPath (

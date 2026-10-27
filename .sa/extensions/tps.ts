@@ -1,5 +1,5 @@
 import type { AssistantMessage } from "@sa/ai";
-import type { ExtensionAPI } from "@sa/coding-agent";
+import type { ExtensionAPI } from "@sa/science-agent";
 
 function isAssistantMessage(message: unknown): message is AssistantMessage {
 	if (!message || typeof message !== "object") return false;

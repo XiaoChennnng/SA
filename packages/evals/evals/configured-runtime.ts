@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { type Api, type Context, contentText, type Model, type ModelsSimpleStreamOptions } from "@sa/ai";
-import { ModelRuntime } from "@sa/coding-agent";
+import { ModelRuntime } from "@sa/science-agent";
 
 type ModelFields = {
 	id: string;

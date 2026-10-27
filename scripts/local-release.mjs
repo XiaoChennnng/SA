@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { installConsumer, packageConsumerDirectoryName, smokeTestNpmConsumer } from "./local-package-install.mjs";
 import { produceArtifactSet } from "./package-artifacts.mjs";
-import { codingAgentName, smokeTestCodingAgent } from "./coding-agent-smoke.mjs";
+import { scienceAgentName, smokeTestCodingAgent } from "./science-agent-smoke.mjs";
 import { execNpmSync } from "./npm-command.mjs";
 
 function printUsage() {
@@ -117,17 +117,17 @@ if (!options.skipInstall) {
 	const validationRoot = mkdtempSync(join(tmpdir(), "sa-local-release-consumers-"));
 	try {
 		for (const pkg of artifactSet.packages) {
-			const directory = pkg.name === codingAgentName
+			const directory = pkg.name === scienceAgentName
 				? nodeInstallDirectory
 				: join(validationRoot, "npm", packageConsumerDirectoryName(pkg.name));
 			installConsumer({ artifactSet, directory, packageNames: [pkg.name] });
 			smokeTestNpmConsumer({ artifactSet, directory, packageName: pkg.name });
-			if (pkg.name === codingAgentName) smokeTestCodingAgent(directory);
+			if (pkg.name === scienceAgentName) smokeTestCodingAgent(directory);
 		}
 		createPiShim(nodeInstallDirectory);
 
 		if (!options.skipBunInstall) {
-			installConsumer({ artifactSet, directory: bunInstallDirectory, packageManager: "bun", packageNames: [codingAgentName] });
+			installConsumer({ artifactSet, directory: bunInstallDirectory, packageManager: "bun", packageNames: [scienceAgentName] });
 			smokeTestCodingAgent(bunInstallDirectory, "bun");
 			createPiShim(bunInstallDirectory);
 		}

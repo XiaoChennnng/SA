@@ -67,7 +67,7 @@ cd "$repo_root"
 
 commit="$(git rev-parse --verify --end-of-options "${source_ref}^{commit}")"
 
-package_version="$(git show "${commit}:packages/coding-agent/package.json" | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).version')"
+package_version="$(git show "${commit}:packages/science-agent/package.json" | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).version')"
 if [[ "$package_version" != "$version" ]]; then
     echo "Version ${version} does not match package version ${package_version} at ${source_ref}" >&2
     exit 1
@@ -131,9 +131,9 @@ required_paths=(
     "packages/tui/native/win32/src/win32-platform.c"
     "packages/tui/native/win32/prebuilds/win32-arm64/win32-platform.node"
     "packages/tui/native/win32/prebuilds/win32-x64/win32-platform.node"
-    "packages/coding-agent/package.json"
-    "packages/coding-agent/src/utils/image-resize-worker.ts"
-    "packages/coding-agent/src/core/export-html/template.css"
+    "packages/science-agent/package.json"
+    "packages/science-agent/src/utils/image-resize-worker.ts"
+    "packages/science-agent/src/core/export-html/template.css"
 )
 
 for path in "${required_paths[@]}"; do
@@ -148,7 +148,7 @@ if ! awk -v prefix="${archive_root}/" 'index($0, prefix) != 1 { exit 1 }' "$mani
     exit 1
 fi
 
-if grep -Eq '(^|/)node_modules/|(^|/)packages/coding-agent/binaries/' "$manifest"; then
+if grep -Eq '(^|/)node_modules/|(^|/)packages/science-agent/binaries/' "$manifest"; then
     echo "Source archive contains generated dependencies or binaries" >&2
     exit 1
 fi

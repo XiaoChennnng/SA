@@ -19,7 +19,7 @@ on:
       - 'nix/**'
       - 'package-lock.json'
       - 'packages/*/package.json'
-      - 'packages/coding-agent/install-lock/**'
+      - 'packages/science-agent/install-lock/**'
       - 'packages/ai/scripts/hydrate-model-catalog.ts'
   # Catches packaging drift from changes pushed to main without a pull request.
   schedule:

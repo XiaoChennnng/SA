@@ -81,11 +81,11 @@ Repetition order alternates by run number to reduce order bias.
 
 ## Documentation variants
 
-`without_docs` omits the coding-agent `README.md`, `CHANGELOG.md`, `docs/`, and `examples/`, then removes the SA documentation-routing section from the default system prompt.
+`without_docs` omits the science-agent `README.md`, `CHANGELOG.md`, `docs/`, and `examples/`, then removes the SA documentation-routing section from the default system prompt.
 
 `with_docs` includes those files and uses the unchanged default prompt.
 
-Both variants install the same local workspace tarballs. Existing npm overrides ensure coding-agent's internal SA dependencies also come from the current repository rather than the registry. Documentation and source files from internal dependency packages are removed symmetrically so they cannot act as alternate instructions. Startup validates the image allowlist and verifies that the installed coding-agent package resolves from `dist/`. Eval definitions, evaluator helpers, fixtures, and Vitest configuration are root-owned and unreadable after the harness permanently drops to an unprivileged UID. Each run receives a new home, agent directory, workspace, session directory, and container filesystem.
+Both variants install the same local workspace tarballs. Existing npm overrides ensure science-agent's internal SA dependencies also come from the current repository rather than the registry. Documentation and source files from internal dependency packages are removed symmetrically so they cannot act as alternate instructions. Startup validates the image allowlist and verifies that the installed science-agent package resolves from `dist/`. Eval definitions, evaluator helpers, fixtures, and Vitest configuration are root-owned and unreadable after the harness permanently drops to an unprivileged UID. Each run receives a new home, agent directory, workspace, session directory, and container filesystem.
 
 Documentation evals allow only `read`, `write`, `edit`, `grep`, `find`, and `ls` by default. They do not expose shell or web-search tools. Provider traffic still requires container network access, so Docker alone cannot prove that arbitrary code written by an agent never uses the network.
 

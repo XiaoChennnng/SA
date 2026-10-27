@@ -205,7 +205,7 @@ interface ShellConfig {
 	commandTransport?: "argv" | "stdin";
 }
 
-// Keep in sync with packages/coding-agent/src/utils/shell.ts.
+// Keep in sync with packages/science-agent/src/utils/shell.ts.
 function isLegacyWslBashPath(path: string): boolean {
 	const normalized = win32.normalize(path).toLowerCase();
 	const systemRoot = process.env.SystemRoot;

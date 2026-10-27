@@ -29,7 +29,7 @@ CLAUDE.md
 .npm/
 coverage/
 .nyc_output/
-.pi_config/
+.sa_config/
 tui-debug.log
 compaction-results/
 .opencode/
@@ -37,7 +37,7 @@ syntax.jsonl
 out.jsonl
 sa-*.html
 out.html
-packages/coding-agent/binaries/
+packages/science-agent/binaries/
 packages/env/bin/
 packages/env/daemon/target/
 todo.md

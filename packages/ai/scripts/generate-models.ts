@@ -419,7 +419,7 @@ const OPENAI_LONG_CONTEXT_PRICING_MODEL_IDS = new Set([
 	"gpt-6.1-sol",
 ]);
 
-// Keep the generated default no less restrictive than coding-agent's historical
+// Keep the generated default no less restrictive than science-agent's historical
 // image preprocessing. Provider limits can narrow this profile, but unknown
 // providers retain the cache-safe 2000px / 4.5 MiB behavior.
 const DEFAULT_IMAGE_RESIZE = {

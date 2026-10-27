@@ -59,7 +59,7 @@ export interface AuthOperationOptions {
  * Error semantics: `read` resolves `undefined` for missing entries. Methods
  * reject only on storage failure; `Models` wraps such rejections in
  * `ModelsError` with code "auth". Best-effort stores that serve an in-memory
- * view and record persistence errors internally (like coding-agent's
+ * view and record persistence errors internally (like science-agent's
  * AuthStorage) are valid implementations.
  */
 export interface CredentialStore {

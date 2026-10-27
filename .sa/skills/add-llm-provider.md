@@ -1,6 +1,6 @@
 ---
 name: add-llm-provider
-description: Checklist for adding a new LLM provider to packages/ai. Covers core types, provider implementation, lazy registration, model generation, the full test matrix, coding-agent wiring, and docs.
+description: Checklist for adding a new LLM provider to packages/ai. Covers core types, provider implementation, lazy registration, model generation, the full test matrix, science-agent wiring, and docs.
 ---
 
 # Adding a New LLM Provider (packages/ai)
@@ -44,7 +44,7 @@ Most providers reuse an existing API such as `openai-completions`; skip this ste
 - For `cross-provider-handoff.test.ts`, add at least one provider/model pair. If the provider exposes multiple model families (e.g. GPT and Claude), add at least one pair per family.
 - For non-standard auth, create a utility (e.g. `bedrock-utils.ts`) with credential detection.
 
-## 6. Coding Agent (`packages/coding-agent/`)
+## 6. Science Agent (`packages/science-agent/`)
 
 - `src/core/model-resolver.ts`: add default model ID to `defaultModelPerProvider`.
 - `src/cli/args.ts`: add env var documentation.

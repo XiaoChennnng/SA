@@ -40,7 +40,7 @@
 		"model-context-protocol",
 		"client"
 	],
-	"author": "Earendil Works",
+	"author": "SA contributors",
 	"license": "MIT",
 	"engines": {
 		"node": ">=22.19.0"

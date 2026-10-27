@@ -33,8 +33,8 @@ test("pins published and private dependencies without touching registry aliases,
 			name: "@sa/ai",
 			version: "2.0.0",
 		});
-		await writeManifest(root, "packages/coding-agent", {
-			name: "@sa/coding-agent",
+		await writeManifest(root, "packages/science-agent", {
+			name: "@sa/science-agent",
 			version: "2.0.0",
 			dependencies: {
 				"@sa/ai": "^2.0.0",
@@ -51,31 +51,31 @@ test("pins published and private dependencies without touching registry aliases,
 			version: "9.9.9",
 			private: true,
 			dependencies: {
-				"@sa/coding-agent": "^1.0.0",
+				"@sa/science-agent": "^1.0.0",
 				"@mariozechner/sa-ai": "npm:@sa/ai@1.0.0",
 			},
 		});
-		await writeManifest(root, "packages/coding-agent/install-lock", {
+		await writeManifest(root, "packages/science-agent/install-lock", {
 			name: "generated-install-lock",
 			version: "0.0.0",
 			private: true,
 			dependencies: {
-				"@sa/coding-agent": "^1.0.0",
+				"@sa/science-agent": "^1.0.0",
 			},
 		});
 
 		const result = runSyncVersions(root);
 		assert.equal(result.status, 0, result.stderr);
 
-		const agentManifest = await readManifest(root, "packages/coding-agent");
+		const agentManifest = await readManifest(root, "packages/science-agent");
 		for (const section of ["dependencies", "devDependencies", "optionalDependencies"]) {
 			assert.equal(agentManifest[section]["@sa/ai"], "2.0.0");
 		}
 		const evalsManifest = await readManifest(root, "packages/evals");
-		assert.equal(evalsManifest.dependencies["@sa/coding-agent"], "2.0.0");
+		assert.equal(evalsManifest.dependencies["@sa/science-agent"], "2.0.0");
 		assert.equal(evalsManifest.dependencies["@mariozechner/sa-ai"], "npm:@sa/ai@1.0.0");
-		const generatedManifest = await readManifest(root, "packages/coding-agent/install-lock");
-		assert.equal(generatedManifest.dependencies["@sa/coding-agent"], "^1.0.0");
+		const generatedManifest = await readManifest(root, "packages/science-agent/install-lock");
+		assert.equal(generatedManifest.dependencies["@sa/science-agent"], "^1.0.0");
 
 		const alreadySynced = runSyncVersions(root);
 		assert.equal(alreadySynced.status, 0, alreadySynced.stderr);

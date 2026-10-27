@@ -1865,7 +1865,7 @@ Credentials are saved to `auth.json` in the current directory.
 
 ### Programmatic OAuth
 
-Built-in login and refresh flows are private provider implementations. Use provider-owned `OAuthAuth`, which composes with `CredentialStore` and gets locked auto-refresh through `Models`. The `@sa/ai/oauth` entry point retains only type declarations required by coding-agent extension OAuth compatibility.
+Built-in login and refresh flows are private provider implementations. Use provider-owned `OAuthAuth`, which composes with `CredentialStore` and gets locked auto-refresh through `Models`. The `@sa/ai/oauth` entry point retains only type declarations required by science-agent extension OAuth compatibility.
 
 Provider notes:
 
@@ -1959,7 +1959,7 @@ For `cross-provider-handoff.test.ts`, add at least one provider/model pair. If t
 
 For providers with non-standard auth (AWS, Google Vertex), create a utility like `bedrock-utils.ts` with credential detection helpers.
 
-#### 6. Coding Agent Integration (`../coding-agent/`)
+#### 6. Science Agent Integration (`../science-agent/`)
 
 Update `src/core/model-resolver.ts`:
 

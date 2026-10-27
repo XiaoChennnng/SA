@@ -10,13 +10,13 @@ RUN --mount=type=bind,source=.,target=/repo,rw \
     && node packages/evals/docker/install-runtime.mjs /opt/evaluator
 
 # Both variants use the same installed runtime. The control removes only the
-# coding-agent documentation whose effect the experiment measures.
+# science-agent documentation whose effect the experiment measures.
 FROM builder AS without-docs-install
 RUN rm -rf \
-    /opt/evaluator/install/node_modules/@sa/coding-agent/README.md \
-    /opt/evaluator/install/node_modules/@sa/coding-agent/CHANGELOG.md \
-    /opt/evaluator/install/node_modules/@sa/coding-agent/docs \
-    /opt/evaluator/install/node_modules/@sa/coding-agent/examples
+    /opt/evaluator/install/node_modules/@sa/science-agent/README.md \
+    /opt/evaluator/install/node_modules/@sa/science-agent/CHANGELOG.md \
+    /opt/evaluator/install/node_modules/@sa/science-agent/docs \
+    /opt/evaluator/install/node_modules/@sa/science-agent/examples
 
 FROM node:24-slim AS evaluator
 COPY --from=builder /opt/evaluator/root /repo

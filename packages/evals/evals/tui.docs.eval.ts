@@ -8,7 +8,7 @@ import {
 	InteractiveMode,
 	SessionManager,
 	createAgentSessionFromServices,
-} from "@sa/coding-agent";
+} from "@sa/science-agent";
 import { createJudge, describeEval } from "vitest-evals";
 import { createPiDocumentationEvalHarness, type SaCodingAgentInput } from "../src/harness.ts";
 

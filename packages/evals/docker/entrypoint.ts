@@ -28,13 +28,13 @@ function assertWorkspace(): void {
 	assertDirectoryEntries("/repo", ["node_modules", "package.json", "packages", "vitest.base.ts"]);
 	assertDirectoryEntries("/repo/packages", ["evals"]);
 	assertDirectoryEntries("/repo/packages/evals", ["docker", "evals", "package.json", "src", "vitest.evals.config.ts"]);
-	const codingAgentDir = "/repo/node_modules/@sa/coding-agent";
+	const scienceAgentDir = "/repo/node_modules/@sa/science-agent";
 	for (const name of ["package.json", "dist/index.js"]) {
-		if (!existsSync(join(codingAgentDir, name))) throw new Error(`Installed coding-agent is missing ${name}.`);
+		if (!existsSync(join(scienceAgentDir, name))) throw new Error(`Installed science-agent is missing ${name}.`);
 	}
 	const internalScope = "/repo/node_modules/@sa";
 	for (const packageName of readdirSync(internalScope)) {
-		if (packageName === "coding-agent") continue;
+		if (packageName === "science-agent") continue;
 		const packageDirectory = join(internalScope, packageName);
 		for (const entry of readdirSync(packageDirectory, { withFileTypes: true })) {
 			if (
@@ -47,16 +47,16 @@ function assertWorkspace(): void {
 	}
 	if (variant === "without_docs") {
 		for (const name of ["README.md", "CHANGELOG.md", "docs", "examples"]) {
-			if (existsSync(join(codingAgentDir, name))) throw new Error(`without_docs contains coding-agent ${name}.`);
+			if (existsSync(join(scienceAgentDir, name))) throw new Error(`without_docs contains science-agent ${name}.`);
 		}
 		return;
 	}
 	if (variant !== "with_docs") throw new Error("Eval image has no valid SA_EVAL_VARIANT.");
 	for (const path of [
-		join(codingAgentDir, "README.md"),
-		join(codingAgentDir, "CHANGELOG.md"),
-		join(codingAgentDir, "docs/models.md"),
-		join(codingAgentDir, "examples/README.md"),
+		join(scienceAgentDir, "README.md"),
+		join(scienceAgentDir, "CHANGELOG.md"),
+		join(scienceAgentDir, "docs/models.md"),
+		join(scienceAgentDir, "examples/README.md"),
 	]) {
 		if (!existsSync(path) || readFileSync(path).length === 0) throw new Error(`Missing documentation: ${path}`);
 	}
@@ -99,9 +99,9 @@ for (const path of [
 	assertRootOnly(path);
 	assertSandboxCannotRead(path);
 }
-const codingAgentEntry = fileURLToPath(import.meta.resolve("@sa/coding-agent"));
-if (codingAgentEntry !== "/repo/node_modules/@sa/coding-agent/dist/index.js") {
-	throw new Error(`Eval does not resolve sa-coding-agent from dist: ${codingAgentEntry}`);
+const scienceAgentEntry = fileURLToPath(import.meta.resolve("@sa/science-agent"));
+if (scienceAgentEntry !== "/repo/node_modules/@sa/science-agent/dist/index.js") {
+	throw new Error(`Eval does not resolve sa-science-agent from dist: ${scienceAgentEntry}`);
 }
 
 const agentDir = "/tmp/sa-eval-host-agent";

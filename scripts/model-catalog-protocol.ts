@@ -4,7 +4,7 @@
  * This file is copied verbatim into two repositories. Change both copies in
  * the same pair of pull requests and keep them byte for byte identical:
  *
- *   earendil-works/sa      scripts/model-catalog-protocol.ts
+ *   SA                        scripts/model-catalog-protocol.ts
  *   catalog servers       src/shared/models/protocol.ts
  *
  * sa uses it to publish catalog revisions and to test clients against the

@@ -584,7 +584,7 @@ Running compactions are listed in `docs["sa.live"].compactions` with their reaso
 
 ## Agent Events (Experimental)
 
-For consumers that want coding-agent style events (`message_start`, `message_update`, `tool_execution_start`, ...) instead of structural state:
+For consumers that want science-agent style events (`message_start`, `message_update`, `tool_execution_start`, ...) instead of structural state:
 
 ```typescript
 import { watchEvents } from "@sa/durable";
@@ -864,7 +864,7 @@ node --conditions=source --experimental-strip-types test/examples/13-chat.ts
 | [22-subagent-background](test/examples/22-subagent-background.ts) | Persistent subagents: spawn, steer, stop, list, answers reported back, restart-safe |
 | [23-child-tasks](test/examples/23-child-tasks.ts) | A checkout that owns and waits for four payments: failFast, abort, restart |
 | [24-compaction](test/examples/24-compaction.ts) | A long chat compacted in the background, manually, and after a context overflow |
-| [25-coding-agent](test/examples/25-coding-agent.ts) | CodingTools, live settings from a settings object, an environment that follows the conversation's directory |
+| [25-science-agent](test/examples/25-science-agent.ts) | CodingTools, live settings from a settings object, an environment that follows the conversation's directory |
 | [26-plan-mode](test/examples/26-plan-mode.ts) | A read-only plan mode as an extension with its own document, switched with `configure()` |
 | [27-reviewer](test/examples/27-reviewer.ts) | A reviewer conversation with its own model, extensions, tools, directory, and review loop |
 | [28-sandbox-per-conversation](test/examples/28-sandbox-per-conversation.ts) | An environment per conversation, looked up from an app document |

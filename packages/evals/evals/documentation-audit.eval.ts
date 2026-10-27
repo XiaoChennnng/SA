@@ -1,7 +1,7 @@
 import { globSync } from "node:fs";
 import { resolve } from "node:path";
 import { Type } from "@sa/ai";
-import { defineTool } from "@sa/coding-agent";
+import { defineTool } from "@sa/science-agent";
 import { expect } from "vitest";
 import { describeEval, toolCalls } from "vitest-evals";
 import { createSaCodingAgentHarness } from "../src/harness.ts";
@@ -30,7 +30,7 @@ const submitAudit = defineTool({
 });
 
 const repositoryRoot = resolve(import.meta.dirname, "../../..");
-const docsRoot = resolve(repositoryRoot, "packages/coding-agent/docs");
+const docsRoot = resolve(repositoryRoot, "packages/science-agent/docs");
 const pages = globSync("**/*.md", { cwd: docsRoot })
 	.map((path) => ({ path: path.replaceAll("\\", "/") }))
 	.sort((left, right) => left.path.localeCompare(right.path));

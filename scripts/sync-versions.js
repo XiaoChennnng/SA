@@ -9,7 +9,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { findPackageDirectories } from "./package-workspaces.mjs";
 
-const GENERATED_PACKAGE_SUFFIXES = [join("coding-agent", "install-lock")];
+const GENERATED_PACKAGE_SUFFIXES = [join("science-agent", "install-lock")];
 
 const packageRoot = process.argv[2] ?? "packages";
 const workspacePackages = findPackageDirectories(packageRoot)

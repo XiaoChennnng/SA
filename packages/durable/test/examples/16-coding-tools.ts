@@ -1,4 +1,4 @@
-// A coding-agent tool turn on JSONL storage: the model reads, edits, and runs commands, then answers. A hook times a
+// A science-agent tool turn on JSONL storage: the model reads, edits, and runs commands, then answers. A hook times a
 // `cat` of /tmp/1gb.txt (create it first to measure; without it that call ends in an error result). The storage
 // directory is left behind for inspection.
 // Run from packages/durable:

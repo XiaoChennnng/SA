@@ -287,7 +287,7 @@ console.log();
 console.log("Regenerating release artifacts...");
 run("npm run generate:models");
 run("npm run check:model-data");
-run("npm run install-lock:coding-agent");
+run("npm run install-lock:science-agent");
 console.log();
 
 // 6. Run checks and tests
@@ -309,7 +309,7 @@ if (process.env.SA_RELEASE_SKIP_TESTS === "1") {
 	console.log();
 }
 
-console.log("Checking the packed coding-agent consumer install...");
+console.log("Checking the packed science-agent consumer install...");
 run("npm run check:package-install");
 console.log();
 

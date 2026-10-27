@@ -100,8 +100,7 @@ function getCacheControl(
 const claudeCodeVersion = "2.1.280";
 
 // Claude Code 2.x tool names (canonical casing)
-// Source: https://cchistory.mariozechner.at/data/prompts-2.1.11.md
-// To update: https://github.com/badlogic/cchistory
+// Source: Claude Code 2.x prompt history; keep this list in sync with upstream tool names.
 const claudeCodeTools = [
 	"Read",
 	"Write",

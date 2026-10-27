@@ -4,7 +4,7 @@
  * Exposes /tui to show TUI redraw stats.
  */
 
-import type { ExtensionAPI } from "@sa/coding-agent";
+import type { ExtensionAPI } from "@sa/science-agent";
 import { Text } from "@sa/tui";
 
 export default function (sa: ExtensionAPI) {

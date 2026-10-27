@@ -38,7 +38,7 @@ const localConfig = mergeConfig(
 	baseConfig,
 	defineConfig({
 		resolve: {
-			alias: [{ find: /^@sa\/coding-agent$/, replacement: workspaceSourcePaths.codingAgentIndex }],
+			alias: [{ find: /^@sa\/science-agent$/, replacement: workspaceSourcePaths.scienceAgentIndex }],
 		},
 	}),
 );

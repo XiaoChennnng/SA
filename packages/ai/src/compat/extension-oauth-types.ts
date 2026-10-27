@@ -35,7 +35,7 @@ export interface OAuthSelectPrompt {
 	options: OAuthSelectOption[];
 }
 
-/** Callback surface retained only for coding-agent extension compatibility. */
+/** Callback surface retained only for science-agent extension compatibility. */
 export interface OAuthLoginCallbacks {
 	onAuth(info: OAuthAuthInfo): void;
 	onDeviceCode(info: OAuthDeviceCodeInfo): void;

@@ -6,7 +6,7 @@
  *
  * Existing apps switch imports from "@sa/ai" to
  * "@sa/ai/compat" unchanged; new code uses `createModels()`
- * and the provider factories. This module is deleted with the coding-agent
+ * and the provider factories. This module is deleted with the science-agent
  * ModelManager migration.
  */
 

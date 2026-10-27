@@ -8,7 +8,7 @@ export default mergeConfig(
 			include: ["test/**/*.test.ts"],
 		},
 		resolve: {
-			alias: [{ find: /^@sa\/coding-agent$/, replacement: workspaceSourcePaths.codingAgentIndex }],
+			alias: [{ find: /^@sa\/science-agent$/, replacement: workspaceSourcePaths.scienceAgentIndex }],
 		},
 	}),
 );

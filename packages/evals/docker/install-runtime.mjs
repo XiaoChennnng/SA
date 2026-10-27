@@ -4,7 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { installConsumer } from "../../../scripts/local-package-install.mjs";
 import { produceArtifactSet } from "../../../scripts/package-artifacts.mjs";
-import { codingAgentName } from "../../../scripts/coding-agent-smoke.mjs";
+import { scienceAgentName } from "../../../scripts/science-agent-smoke.mjs";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const outputDirectory = process.argv[2];
@@ -23,7 +23,7 @@ const artifactSet = produceArtifactSet({
 const artifactNames = new Set(artifactSet.packages.map((pkg) => pkg.name));
 const evaluatorDependencies = Object.entries(evalPackage.devDependencies).filter(([name]) => !artifactNames.has(name));
 const installDirectory = join(outputDirectory, "install");
-installConsumer({ artifactSet, directory: installDirectory, packageNames: [codingAgentName] });
+installConsumer({ artifactSet, directory: installDirectory, packageNames: [scienceAgentName] });
 execFileSync(
 	"npm",
 	[
@@ -39,7 +39,7 @@ execFileSync(
 );
 
 for (const packageName of artifactNames) {
-	if (packageName === codingAgentName) continue;
+	if (packageName === scienceAgentName) continue;
 	const packageDirectory = join(installDirectory, "node_modules", ...packageName.split("/"));
 	if (!existsSync(packageDirectory)) continue;
 	for (const entry of readdirSync(packageDirectory, { withFileTypes: true })) {

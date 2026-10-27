@@ -17,7 +17,7 @@ import {
 	ModelRuntime,
 	readStoredCredential,
 	SessionManager,
-} from "@sa/coding-agent";
+} from "@sa/science-agent";
 import {
 	attachHarnessRunToError,
 	createHarness,
@@ -476,7 +476,7 @@ export function createSaCodingAgentHarness<TOutput extends JsonValue>(
 	options: SaCodingAgentHarnessOptions | SaCodingAgentHarnessWithOutput<TOutput> = {},
 ): Harness<SaCodingAgentInput, string | TOutput> {
 	return createHarness<SaCodingAgentInput, string | TOutput>({
-		name: options.name ?? "coding-agent",
+		name: options.name ?? "science-agent",
 		run: ({ input, signal, setArtifact }) => runSaCodingAgent(input, signal, setArtifact, options),
 	});
 }

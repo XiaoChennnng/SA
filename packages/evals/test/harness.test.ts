@@ -1,7 +1,7 @@
 import { homedir } from "node:os";
-import { getDocsPath, getExamplesPath, getReadmePath } from "@sa/coding-agent";
+import { getDocsPath, getExamplesPath, getReadmePath } from "@sa/science-agent";
 import { describe, expect, it, vi } from "vitest";
-import { buildSystemPrompt } from "../../coding-agent/src/core/system-prompt.ts";
+import { buildSystemPrompt } from "../../science-agent/src/core/system-prompt.ts";
 import {
 	applyIsolatedEnvironment,
 	createPiDocumentationEvalHarness,

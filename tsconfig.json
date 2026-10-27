@@ -39,9 +39,9 @@
 			],
 			"@sa/env": ["./packages/env/src/index.ts"],
 			"@sa/agent-core": ["./packages/agent/src/index.ts"],
-			"@sa/coding-agent": ["./packages/coding-agent/src/index.ts"],
-			"@sa/coding-agent/hooks": ["./packages/coding-agent/src/core/hooks/index.ts"],
-			"@sa/coding-agent/*": ["./packages/coding-agent/src/*"],
+			"@sa/science-agent": ["./packages/science-agent/src/index.ts"],
+			"@sa/science-agent/hooks": ["./packages/science-agent/src/core/hooks/index.ts"],
+			"@sa/science-agent/*": ["./packages/science-agent/src/*"],
 			"typebox": ["./node_modules/typebox"],
 			"@sa/tui": ["./packages/tui/src/index.ts"],
 			"@sa/tui/*": ["./packages/tui/src/*"],
@@ -49,6 +49,6 @@
 			"@sa/agent-old/*": ["./packages/agent-old/src/*"]
 		}
 	},
-	"include": ["scripts/model-catalog-protocol.ts", "scripts/model-catalog-protocol.test.ts", "packages/*/src/**/*", "packages/*/test/**/*", "packages/durable/test-workers/**/*", "packages/coding-agent/examples/**/*", "packages/agent/examples/**/*"],
-	"exclude": ["**/dist/**", "packages/coding-agent/examples/extensions/gondolin/**"]
+	"include": ["scripts/model-catalog-protocol.ts", "scripts/model-catalog-protocol.test.ts", "packages/*/src/**/*", "packages/*/test/**/*", "packages/durable/test-workers/**/*", "packages/science-agent/examples/**/*", "packages/agent/examples/**/*"],
+	"exclude": ["**/dist/**", "packages/science-agent/examples/extensions/gondolin/**"]
 }
