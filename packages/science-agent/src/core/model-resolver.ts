@@ -15,7 +15,9 @@ export const defaultModelPerProvider: Partial<Record<KnownProvider, string>> = {
 	"amazon-bedrock": "us.anthropic.claude-opus-4-6-v1",
 	"ant-ling": "Ring-2.6-1T",
 	anthropic: "claude-opus-4-8",
+	"anthropic-custom": "claude-opus-4-8",
 	openai: "gpt-5.5",
+	"openai-custom": "gpt-5.5",
 	azure: "gpt-5.4",
 	"openai-codex": "gpt-6.1-sol",
 	// Static catalog entry only; the Radius provider is not registered in this build.

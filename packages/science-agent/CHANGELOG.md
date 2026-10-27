@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `/login` now offers **OpenAI (custom)** and **Anthropic (custom)**. Each asks for a base URL and API key so the official protocol can run through a proxy or gateway. The base URL is stored with the credential, and `/logout` removes both.
+
 ## [0.1.0] - 2026-10-27
 
 Initial SA (Science Agent) release, based on Pi.
