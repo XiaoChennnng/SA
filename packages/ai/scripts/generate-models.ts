@@ -38,12 +38,6 @@ import {
 	validateGeneratedModelData,
 	validateModelDataDirectory,
 } from "./model-data.ts";
-import {
-	DEFAULT_RADIUS_GATEWAY,
-	getRadiusModelsFromConfig,
-	loadRadiusGatewayConfig,
-} from "../src/providers/radius-config.ts";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const packageRoot = join(__dirname, "..");
