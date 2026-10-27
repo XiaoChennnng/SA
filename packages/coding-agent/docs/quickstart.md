@@ -104,7 +104,7 @@ Start with the least powerful mechanism that meets your need:
 
 | Need | Start with |
 |---|---|
-| Give SA persistent instructions for a folder | [`AGENTS.md`](configuration.md#context-files) |
+| Give SA persistent instructions for a folder | [`AGENTS.md` and `MEMORY.md`](configuration.md#memory-files) |
 | Reuse a prompt from the `/` menu | [Prompt template](prompt-templates.md) |
 | Add task-specific instructions and supporting files | [Skill](skills.md) |
 | Add executable tools, commands, or event handlers | [Extension](extensions.md) |

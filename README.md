@@ -49,6 +49,7 @@ SA ships with research tools enabled by default:
 - `web_search` and `web_extract` through AnySearch for web results and full pages
 - `paper_read` for open-access PDFs and abstracts, with page ranges and caching
 - `research_note` and `experiment_log` that append to a local Markdown knowledge base
+- a built-in memory extension that lets SA maintain workspace `AGENTS.md` (project conventions) and `MEMORY.md` (project preferences) across sessions
 - `citation` for BibTeX import, validation, and export
 - `latex_build`, `paper_write`, and `python_run` for manuscripts and data analysis
 - `research_files` for organizing papers, notes, data, figures, and manuscripts in a research workspace

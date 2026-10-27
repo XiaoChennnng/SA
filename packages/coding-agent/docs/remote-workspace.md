@@ -74,6 +74,13 @@ missing dependencies in the conversation. Typical requirements:
 - CJK fonts for Chinese PDF typesetting (for example `fonts-noto-cjk`)
 - `rg` and `fd` are optional; SA falls back to `git ls-files`, `find`, and `grep`
 
+## Workspace memory
+
+The built-in memory extension reads `MEMORY.md` and the first matching `AGENTS.override.md`,
+`AGENTS.md`, `AGENTS.MD`, `CLAUDE.md`, or `CLAUDE.MD` from the remote workspace root before each
+run. Only that root is scanned; remote parent directories are not. Local context files still load
+from the local machine, so a remote `AGENTS.md` is added to the project context alongside them.
+
 ## Security and limits
 
 - Only Linux and macOS remote hosts are supported. Remote Windows hosts are rejected.

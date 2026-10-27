@@ -18,8 +18,8 @@ an operating-system privilege boundary.
 
 SA relies on users installing trustworthy extensions and loading trustworthy
 skills and only to use sa within trusted repositories.  This is because files
-like `AGENTS.md` or instructions in comments can be used to prompt inject the
-coding agent trivially and this cannot be protected against.
+like `AGENTS.md`, `MEMORY.md`, or instructions in comments can be used to prompt
+inject the coding agent trivially and this cannot be protected against.
 
 ## Reporting a Vulnerability
 
@@ -55,7 +55,7 @@ are in scope.
 - Reports requiring the ability to create, modify, delete, or replace files,
   directories, symlinks, environment variables, shell configuration, or other
   user-controlled local state on the target machine. This includes `~/.sa`,
-  `~/.sa/agent/models.json`, workspace files, `AGENTS.md`, skills, extensions,
+  `~/.sa/agent/models.json`, workspace files, `AGENTS.md`, `MEMORY.md`, skills, extensions,
   extension configuration, dotfiles, and files synchronized through NFS, roaming
   profiles, or dotfile managers, unless the report shows how SA itself grants
   that access.

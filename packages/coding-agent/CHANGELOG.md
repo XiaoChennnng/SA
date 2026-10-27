@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added a built-in `memory` extension: SA can create and maintain workspace `AGENTS.md` (project conventions and commands) and `MEMORY.md` (project preferences and recurring decisions). `MEMORY.md` is injected before each run in local and SSH workspaces, workspace AGENTS/CLAUDE changes are refreshed without `/reload`, and `--no-context-files` also disables the extension.
 - Built-in research tools, enabled by default: `paper_search` (arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed), `paper_read` (open-access PDFs with system extraction), `research_note` and `experiment_log` (Markdown knowledge base), `citation` (BibTeX import/export/validation), `latex_build`, and `python_run`. A new `research` settings block configures providers, storage paths, and system tools.
 - Added `/research` to configure research APIs and sources interactively or with `/research set <field> <value>`. Chinese literature search now supports Wanfang through its official open platform and CNKI/NSTL through user-configured authorized commands; configured sources join default searches automatically.
 - Added Europe PMC, OpenAIRE, DOAJ, HAL, and CORE (with a key) as literature search sources, and Unpaywall as the first open-access PDF resolver for DOI reads.

@@ -212,7 +212,7 @@ See [Configuration](configuration.md) for conventional directories and project t
 - `--no-themes`<br>
   Disables discovered and configured themes. Explicit `--theme` paths still load.
 - `-nc`, `--no-context-files`<br>
-  Disables `AGENTS.md` and `CLAUDE.md` discovery.
+  Disables `AGENTS.md` and `CLAUDE.md` discovery, and disables the built-in memory extension.
 
 Resource paths apply only to the current process. Relative paths resolve from the current working directory.
 
