@@ -1,6 +1,6 @@
 {
 	"name": "@sa/science-agent",
-	"version": "0.1.1+1029",
+	"version": "0.1.1-1029",
 	"description": "SA (Science Agent): an agent built for scientific research",
 	"repository": {
 		"type": "git",

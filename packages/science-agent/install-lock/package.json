@@ -1,10 +1,10 @@
 {
 	"name": "@sa/science-agent-install",
-	"version": "0.1.1+1029",
+	"version": "0.1.1-1029",
 	"private": true,
 	"description": "Lockfile root used by the SA installer and updater.",
 	"dependencies": {
-		"@sa/science-agent": "0.1.1+1029"
+		"@sa/science-agent": "0.1.1-1029"
 	},
 	"overrides": {
 		"protobufjs": "7.6.6"
