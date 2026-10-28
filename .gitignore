@@ -45,3 +45,6 @@ plans/
 .sa/settings.json
 collect.sh
 packages/agent/docs/extensions/sa-server-artifact/index.md
+
+# Local agent instructions
+CLAUDE.md
