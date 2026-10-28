@@ -46,7 +46,7 @@ const paperSearchSchema = Type.Object({
 	),
 	save: Type.Optional(
 		Type.Boolean({
-			description: "Append results to the local Markdown research knowledge base (default: false).",
+			description: "Append results to research.md (default: false).",
 		}),
 	),
 });
@@ -65,12 +65,11 @@ export interface PaperSearchToolOptions extends Partial<ResearchToolOptions> {
 }
 
 export const paperSearchToolSystemPromptContribution = {
-	snippet:
-		"Search scholarly literature (arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC, OpenAIRE, DOAJ, HAL) and configured sources (Wanfang, CNKI, NSTL, CORE)",
+	snippet: "Search scholarly literature across international and configured Chinese sources",
 	guidelines: [
-		"Use paper_search to find literature before making claims about prior work, and cite the returned DOI, arXiv ID, or paper ID",
-		"Try several phrasings and synonyms before concluding that a topic has no relevant literature",
-		"For Chinese-language literature, configure Wanfang APP_KEY, a CNKI command, or an institutional NSTL command with /research, then include the source",
+		"Search before claiming prior work; cite the returned DOI, arXiv ID, or paper ID",
+		"Try several phrasings before concluding a topic has no literature",
+		"For Chinese sources, configure Wanfang, CNKI, or NSTL with /research",
 	],
 } as const;
 
@@ -108,7 +107,7 @@ export function createPaperSearchToolDefinition(
 		name: "paper_search",
 		label: "paper_search",
 		description:
-			"Search scholarly literature across arXiv, OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC, OpenAIRE, DOAJ, and HAL, plus configured sources (Wanfang via APP_KEY, CORE via API key, CNKI and NSTL via local commands). Returns deduplicated papers with DOI, arXiv ID, PMID, venue, citation count, abstract, and open-access PDF links. Set save=true to append new results to research.md.",
+			"Search scholarly literature across international and configured Chinese sources. Returns deduplicated papers with DOI, arXiv ID, PMID, venue, citations, abstract, and open-access PDF links. Set save=true to append results to research.md.",
 		promptSnippet: paperSearchToolSystemPromptContribution.snippet,
 		promptGuidelines: [...paperSearchToolSystemPromptContribution.guidelines],
 		parameters: paperSearchSchema,

@@ -42,11 +42,8 @@ export interface ResearchFilesToolDetails {
 export interface ResearchFilesToolOptions extends Partial<ResearchToolOptions> {}
 
 export const researchFilesToolSystemPromptContribution = {
-	snippet: "Create, list, read, move, copy, and delete files in the research workspace",
-	guidelines: [
-		"Use research_files to organize research artifacts under a workspace instead of scattering files in the project root",
-		"Prefer clear top-level folders such as papers/, notes/, data/, figures/, experiments/, and manuscripts/",
-	],
+	snippet: "Manage files in the research workspace",
+	guidelines: ["Organize artifacts under papers/, data/, figures/, and manuscripts/ instead of the project root"],
 } as const;
 
 function formatEntry(entry: WorkspaceEntry): string {
@@ -61,8 +58,7 @@ export function createResearchFilesToolDefinition(
 	return {
 		name: "research_files",
 		label: "research_files",
-		description:
-			"Manage files inside the research workspace. Supports listing, creating directories, writing and reading text files, moving, copying, deleting, and inspecting paths. Paths are confined to the workspace root.",
+		description: "Manage files inside the research workspace. Paths are confined to the workspace root.",
 		promptSnippet: researchFilesToolSystemPromptContribution.snippet,
 		promptGuidelines: [...researchFilesToolSystemPromptContribution.guidelines],
 		parameters: researchFilesSchema,

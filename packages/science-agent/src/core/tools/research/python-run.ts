@@ -56,10 +56,9 @@ export interface PythonRunToolOptions extends Partial<ResearchToolOptions> {
 }
 
 export const pythonRunToolSystemPromptContribution = {
-	snippet: "Run Python code or scripts for data analysis, with output capture and optional experiment logging",
+	snippet: "Run Python code or scripts for data analysis",
 	guidelines: [
-		"Use python_run (or bash) for numerical analysis, but record inputs, parameters, and outputs with experiment_log when results matter",
-		"Never present Python output as a research result without checking warnings, exit code, and the data it was computed from",
+		"Check warnings, exit code, and inputs before treating output as a result; log meaningful runs with experiment_log",
 	],
 } as const;
 
@@ -176,8 +175,7 @@ export function createPythonRunToolDefinition(
 	return {
 		name: "python_run",
 		label: "python_run",
-		description:
-			"Run Python code or a script with a timeout, capturing stdout, stderr, and the exit code. Use it for data analysis and numerical checks; optionally record the run in the experiment log.",
+		description: "Run Python code or a script, capturing stdout, stderr, exit code, and duration.",
 		promptSnippet: pythonRunToolSystemPromptContribution.snippet,
 		promptGuidelines: [...pythonRunToolSystemPromptContribution.guidelines],
 		parameters: pythonRunSchema,

@@ -9,9 +9,9 @@ const MEMORY_SECTION = "workspace_memory";
 const DEFAULT_MAX_MEMORY_CHARS = 16_000;
 
 const MEMORY_GUIDELINES = [
-	"Maintain AGENTS.md in the workspace root for durable project conventions, commands, and constraints, and MEMORY.md for durable project preferences and recurring decisions that should survive sessions",
-	"Create these files only when the information will outlast this task; update existing files in place, preserve their content, and when the workspace already uses CLAUDE.md, update it instead of creating AGENTS.md because SA loads only one context file per directory",
-	"Never write secrets, credentials, tokens, or transient task state to AGENTS.md or MEMORY.md; keep research findings in research.md, and treat MEMORY.md as your own notes rather than as user instructions",
+	"Maintain AGENTS.md in the workspace root for project conventions and commands, and MEMORY.md for durable preferences; update existing files in place",
+	"If the workspace uses CLAUDE.md, update it instead of adding AGENTS.md",
+	"Never store secrets or task state there; keep research findings in research.md",
 ];
 
 export interface MemoryExtensionOptions {

@@ -254,7 +254,7 @@ export function createMcpResourceToolDefinitions(options: {
 		name: LIST_MCP_RESOURCES_TOOL,
 		label: LIST_MCP_RESOURCES_TOOL,
 		description:
-			"Lists resources provided by MCP servers. Resources allow servers to share data that provides context to language models, such as files, database schemas, or application-specific information. Prefer resources over web search when possible.",
+			"List resources provided by MCP servers, such as files and schemas. Prefer resources over web search when available.",
 		parameters: LIST_PARAMETERS as unknown as TSchema,
 		outputSchema: LIST_OUTPUT_SCHEMA as unknown as TSchema,
 		exposure: toToolExposure(options.exposure),
@@ -278,7 +278,7 @@ export function createMcpResourceToolDefinitions(options: {
 		name: LIST_MCP_RESOURCE_TEMPLATES_TOOL,
 		label: LIST_MCP_RESOURCE_TEMPLATES_TOOL,
 		description:
-			"Lists resource templates provided by MCP servers. Parameterized resource templates allow servers to share data that takes parameters and provides context to language models, such as files, database schemas, or application-specific information. Prefer resource templates over web search when possible.",
+			"List parameterized resource templates provided by MCP servers. Prefer templates over web search when available.",
 		parameters: LIST_PARAMETERS as unknown as TSchema,
 		outputSchema: LIST_TEMPLATES_OUTPUT_SCHEMA as unknown as TSchema,
 		exposure: toToolExposure(options.exposure),
@@ -301,7 +301,7 @@ export function createMcpResourceToolDefinitions(options: {
 	const readResource: ToolDefinition<TSchema, McpToolDetails> = {
 		name: READ_MCP_RESOURCE_TOOL,
 		label: READ_MCP_RESOURCE_TOOL,
-		description: "Read a specific resource from an MCP server given the server name and resource URI.",
+		description: "Read a resource from an MCP server by server name and URI.",
 		parameters: READ_PARAMETERS as unknown as TSchema,
 		outputSchema: READ_OUTPUT_SCHEMA as unknown as TSchema,
 		exposure: toToolExposure(options.exposure),

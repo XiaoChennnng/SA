@@ -41,11 +41,8 @@ export interface WebSearchToolOptions extends Partial<ResearchToolOptions> {
 }
 
 export const webSearchToolSystemPromptContribution = {
-	snippet: "Search the web for current information and read result pages with AnySearch",
-	guidelines: [
-		"Use web_search for current or web-only information; cite the result URL you used",
-		"Follow a promising result with web_extract to read the page instead of assuming from the snippet",
-	],
+	snippet: "Search the web with AnySearch",
+	guidelines: ["Cite the result URL; use web_extract to read pages instead of trusting snippets"],
 } as const;
 
 export function createWebSearchToolDefinition(
@@ -57,7 +54,7 @@ export function createWebSearchToolDefinition(
 		name: "web_search",
 		label: "web_search",
 		description:
-			"Search the web with AnySearch. Returns titles, URLs, snippets, and extracted content. Use web_extract to read a result in full. An AnySearch API key is optional; anonymous access is rate-limited.",
+			"Search the web with AnySearch and return titles, URLs, snippets, and content. Anonymous access is rate-limited.",
 		promptSnippet: webSearchToolSystemPromptContribution.snippet,
 		promptGuidelines: [...webSearchToolSystemPromptContribution.guidelines],
 		parameters: webSearchSchema,

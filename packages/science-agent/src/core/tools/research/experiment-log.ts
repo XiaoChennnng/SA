@@ -35,10 +35,9 @@ export interface ExperimentLogToolDetails {
 export interface ExperimentLogToolOptions extends Partial<ResearchToolOptions> {}
 
 export const experimentLogToolSystemPromptContribution = {
-	snippet: "Append and search experiment runs in the Markdown research knowledge base",
+	snippet: "Append and search experiment runs in research.md",
 	guidelines: [
-		"Use experiment_log to record every meaningful run, including failed ones, with its configuration and metrics",
-		"Compare runs by reading their Markdown sections before claiming an improvement; report exact metric names and values",
+		"Log every meaningful run with configuration and metrics, including failures; read logged runs before claiming an improvement",
 	],
 } as const;
 
@@ -58,8 +57,7 @@ export function createExperimentLogToolDefinition(
 	return {
 		name: "experiment_log",
 		label: "experiment_log",
-		description:
-			"Append or search experiment runs in the local Markdown research knowledge base (research.md). Runs become ordinary `##` sections with configuration, metrics, artifacts, status, and notes.",
+		description: "Append or search experiment runs as Markdown sections in research.md.",
 		promptSnippet: experimentLogToolSystemPromptContribution.snippet,
 		promptGuidelines: [...experimentLogToolSystemPromptContribution.guidelines],
 		parameters: experimentLogSchema,

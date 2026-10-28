@@ -47,9 +47,8 @@ export interface AskUserToolDetails {
 export const askUserToolSystemPromptContribution = {
 	snippet: "Ask the user clarifying questions when requirements are ambiguous",
 	guidelines: [
-		"When a request is ambiguous, use ask_user to clarify goals, scope, constraints, and acceptance criteria before making large assumptions",
-		"Ask one focused set of questions at a time, offer concrete options when possible, and keep asking until the task is clear",
-		"Do not use ask_user for questions you can answer from the repository, the web, or reasonable conventions",
+		"Ask one focused set of questions when requirements are ambiguous; keep asking until scope and acceptance criteria are clear",
+		"Do not ask what the repository, web, or reasonable conventions can answer",
 	],
 } as const;
 
@@ -91,8 +90,7 @@ export function createAskUserToolDefinition(
 	return {
 		name: "ask_user",
 		label: "ask_user",
-		description:
-			"Ask the user clarifying questions when requirements are ambiguous. Supports free-text answers, single-choice options, and multi-select options. Ask one focused set, then continue asking until goals, scope, constraints, and acceptance criteria are clear.",
+		description: "Ask clarifying questions with free-text, single-choice, or multi-select answers.",
 		promptSnippet: askUserToolSystemPromptContribution.snippet,
 		promptGuidelines: [...askUserToolSystemPromptContribution.guidelines],
 		parameters: askUserSchema,

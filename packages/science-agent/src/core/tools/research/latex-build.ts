@@ -52,10 +52,8 @@ export interface CommandResult {
 }
 
 export const latexBuildToolSystemPromptContribution = {
-	snippet: "Compile a LaTeX document with latexmk/pdflatex/xelatex and report errors and warnings",
-	guidelines: [
-		"Use latex_build after editing .tex or .bib files, and fix every reported error before claiming the document compiles",
-	],
+	snippet: "Compile a LaTeX document and report errors and warnings",
+	guidelines: ["After editing .tex or .bib, compile and fix every reported error before claiming success"],
 } as const;
 
 function defaultIsAvailable(command: string): boolean {
@@ -122,8 +120,7 @@ export function createLatexBuildToolDefinition(
 	return {
 		name: "latex_build",
 		label: "latex_build",
-		description:
-			"Compile a LaTeX document and return structured errors and warnings. Uses latexmk when available, otherwise pdflatex/xelatex/lualatex. The PDF path is returned on success.",
+		description: "Compile a LaTeX document and return errors, warnings, and the PDF path on success.",
 		promptSnippet: latexBuildToolSystemPromptContribution.snippet,
 		promptGuidelines: [...latexBuildToolSystemPromptContribution.guidelines],
 		parameters: latexBuildSchema,

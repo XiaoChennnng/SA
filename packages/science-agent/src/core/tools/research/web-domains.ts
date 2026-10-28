@@ -24,10 +24,8 @@ export interface WebSearchDomainsToolOptions extends Partial<ResearchToolOptions
 }
 
 export const webSearchDomainsToolSystemPromptContribution = {
-	snippet: "List AnySearch domains, sub-domains, and parameters for web_search tags",
-	guidelines: [
-		"Use web_search_domains when a web_search tag or domain parameter is unclear; it does not consume search quota",
-	],
+	snippet: "List AnySearch domains and parameters for web_search",
+	guidelines: ["Use when a web_search tag or domain parameter is unclear"],
 } as const;
 
 export function createWebSearchDomainsToolDefinition(
@@ -38,8 +36,7 @@ export function createWebSearchDomainsToolDefinition(
 	return {
 		name: "web_search_domains",
 		label: "web_search_domains",
-		description:
-			"List AnySearch search domains and their sub-domains and parameters. Use the returned names as web_search tags and to discover domain-specific parameters.",
+		description: "List AnySearch domains, sub-domains, and parameters for web_search.",
 		promptSnippet: webSearchDomainsToolSystemPromptContribution.snippet,
 		promptGuidelines: [...webSearchDomainsToolSystemPromptContribution.guidelines],
 		parameters: webDomainsSchema,

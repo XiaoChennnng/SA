@@ -46,10 +46,10 @@ export interface PaperReadToolOptions extends Partial<ResearchToolOptions> {
 }
 
 export const paperReadToolSystemPromptContribution = {
-	snippet: "Read a paper's full text (PDF via system extractor) or abstract by DOI, arXiv ID, URL, or local file",
+	snippet: "Read a paper's full text or abstract by DOI, arXiv ID, URL, or local file",
 	guidelines: [
-		"Use paper_read before summarizing or critiquing a paper; cite specific pages or sections you actually read",
-		"When a paper is long, read it in page ranges with pageStart/pageEnd instead of assuming the whole argument",
+		"Read before summarizing or critiquing; cite the pages you read",
+		"Use pageStart/pageEnd for long papers",
 	],
 } as const;
 
@@ -64,7 +64,7 @@ export function createPaperReadToolDefinition(
 		name: "paper_read",
 		label: "paper_read",
 		description:
-			"Read a paper by DOI, arXiv ID, PubMed ID, URL, or local file. Downloads open-access PDFs, extracts text with the configured system tool (pdftotext, mutool, or PyMuPDF), and returns page-ranged text. Falls back to the abstract or HTML when no PDF is available.",
+			"Read a paper by DOI, arXiv ID, PMID, URL, or local file. Returns page-ranged full text, falling back to abstract or HTML when no PDF is available.",
 		promptSnippet: paperReadToolSystemPromptContribution.snippet,
 		promptGuidelines: [...paperReadToolSystemPromptContribution.guidelines],
 		parameters: paperReadSchema,

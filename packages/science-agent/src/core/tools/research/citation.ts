@@ -55,11 +55,10 @@ export interface CitationToolOptions extends Partial<ResearchToolOptions> {
 }
 
 export const citationToolSystemPromptContribution = {
-	snippet:
-		"Manage BibTeX citations in the Markdown knowledge base: import by DOI/arXiv/PMID, list, validate, and export a .bib file",
+	snippet: "Manage BibTeX citations in the research knowledge base",
 	guidelines: [
-		"Use citation after reading a paper you will reference, and export BibTeX before writing related work",
-		"Do not invent bibliographic entries; every citation should resolve to a DOI, arXiv ID, or PMID",
+		"Cite only sources you read; every entry must resolve to a DOI, arXiv ID, or PMID",
+		"Export BibTeX before writing related work",
 	],
 } as const;
 
@@ -111,8 +110,7 @@ export function createCitationToolDefinition(
 	return {
 		name: "citation",
 		label: "citation",
-		description:
-			"Manage BibTeX citations stored as `## Citation:` sections in the local Markdown knowledge base. Import a citation by DOI, arXiv ID, or PubMed ID, list and filter entries, validate a .bib file, remove an entry, or export all citations to a .bib file.",
+		description: "Import, list, validate, remove, and export BibTeX citations in research.md.",
 		promptSnippet: citationToolSystemPromptContribution.snippet,
 		promptGuidelines: [...citationToolSystemPromptContribution.guidelines],
 		parameters: citationSchema,

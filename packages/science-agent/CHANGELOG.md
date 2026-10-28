@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- System prompt and tool descriptions are more concise, reducing per-request prompt tokens by roughly 15% in the default configuration without changing tool behavior.
+
 ### Fixed
 
 - Updated `undici` to 8.12.3 to address upstream security advisories in the HTTP client.

@@ -116,14 +116,14 @@ export const codemodeToolSystemPromptContribution = {
 export const CODEMODE_DOCS_PATH = join(getDocsPath(), "codemode.md");
 
 const DESCRIPTION_INTRO = `Run JavaScript that calls other tools. The input is raw JavaScript (not JSON, no code fence), run as an async function body in a QuickJS sandbox: top-level \`await\` and \`return\` work. No Node, file system, network, or timers.
-- \`await tools.<name>({ ...args })\` resolves to a string, or an object if the tool's declaration says so, and rejects with an Error on failure. A tool whose declaration returns an object resolves on failure too when it returned that object; check its fields. Calls still running when the script ends are cancelled.
+- \`await tools.<name>(args)\` resolves to a string, or the object its declaration describes, and rejects with an Error on failure. Calls still running when the script ends are cancelled.
 - Optional first line: \`// @options: {"max_output_tokens": 10000, "timeout_ms": 60000}\``;
 
 /** One line per global. The details live in {@link CODEMODE_DOCS_PATH}. */
 function describeGlobals(models: boolean): string {
 	const lines = [
 		"Globals:",
-		"- `text(value)`, `image(dataUrlOrImageBlock)`, `console.log(...)`, and top-level `return` add output; `exit()` ends the script. With several text items, each starts with a `==> text N/M <==` line, and `console` lines follow the other output in one `<console_output>` block. `image()` also saves the image to a temp file and the result names its path.",
+		"- `text(value)`, `image(dataUrlOrImageBlock)`, `console.log(...)`, and top-level `return` add output; `exit()` ends the script. Multiple text items are separated by `==> text N/M <==`; console lines follow in one `<console_output>` block. `image()` saves the image to a temp file named in the result.",
 		"- `store(key, value)` and `load(key)` keep JSON values across codemode calls.",
 		"- `ALL_TOOLS`, `await searchTools(query, { limit?, namespace? })`, `await describeTool(name)`, `await describeNamespace(name)`: find unlisted tools, such as MCP tools.",
 	];

@@ -49,14 +49,12 @@ const paperWriteSchema = Type.Object({
 	style: Type.Optional(paperStyleSchema),
 	formatRequirements: Type.Optional(
 		Type.String({
-			description:
-				"Explicit user formatting requirements. SA maps common requirements (page size, columns, margins, font, size, spacing, numbering) into style fields.",
+			description: "Explicit formatting requirements (page size, columns, margins, font, size, spacing).",
 		}),
 	),
 	outputPath: Type.Optional(
 		Type.String({
-			description:
-				"PDF output path. Relative paths resolve inside the research workspace; default: manuscripts/<slug>/paper.pdf.",
+			description: "PDF output path, relative to the research workspace (default: manuscripts/<slug>/paper.pdf).",
 		}),
 	),
 });
@@ -99,11 +97,10 @@ export interface PaperWriteToolOptions extends Partial<ResearchToolOptions> {
 }
 
 export const paperWriteToolSystemPromptContribution = {
-	snippet: "Typeset a Markdown manuscript into a polished PDF with Python (reportlab), without LaTeX",
+	snippet: "Typeset Markdown into a PDF with Python/reportlab (no LaTeX)",
 	guidelines: [
-		"When LaTeX is unavailable (or the user wants a quick PDF), use paper_write to typeset Markdown into a clean PDF",
-		"Translate explicit user formatting requirements (page size, columns, margins, font, size, spacing) into style fields instead of ignoring them",
-		"Store manuscripts in the research workspace unless the user asks for another path",
+		"Use when LaTeX is unavailable or a quick clean PDF is wanted",
+		"Map explicit page size, column, margin, font, and spacing requirements to style fields",
 	],
 } as const;
 
@@ -379,7 +376,7 @@ export function createPaperWriteToolDefinition(
 		name: "paper_write",
 		label: "paper_write",
 		description:
-			"Typeset a Markdown manuscript into a polished PDF with Python and reportlab. Use this when LaTeX is unavailable or when the user wants a quick, clean PDF. Supports titles, authors, abstract, keywords, headings, lists, tables, code blocks, images, references, page numbers, cover pages, margins, fonts, and one/two columns. Explicit user formatting requirements are mapped into style fields. Relative output paths resolve inside the research workspace.",
+			"Typeset a Markdown manuscript into a PDF with Python and reportlab, including headings, tables, images, references, and page styles. Relative output paths resolve inside the research workspace.",
 		promptSnippet: paperWriteToolSystemPromptContribution.snippet,
 		promptGuidelines: [...paperWriteToolSystemPromptContribution.guidelines],
 		parameters: paperWriteSchema,

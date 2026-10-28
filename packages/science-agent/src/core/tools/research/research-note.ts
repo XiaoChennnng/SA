@@ -42,10 +42,10 @@ export interface ResearchNoteToolDetails {
 export interface ResearchNoteToolOptions extends Partial<ResearchToolOptions> {}
 
 export const researchNoteToolSystemPromptContribution = {
-	snippet: "Append and search notes in the Markdown research knowledge base",
+	snippet: "Append and search notes in research.md",
 	guidelines: [
-		"Use research_note to persist durable findings, decisions, and verbatim quotes instead of relying on conversation memory",
-		"Notes are plain Markdown sections in research.md; link them to a paper or experiment and record uncertainty explicitly",
+		"Persist durable findings, decisions, and quotes instead of relying on conversation memory",
+		"Link notes to a paper or experiment and record uncertainty explicitly",
 	],
 } as const;
 
@@ -65,8 +65,7 @@ export function createResearchNoteToolDefinition(
 	return {
 		name: "research_note",
 		label: "research_note",
-		description:
-			"Append or search notes in the local Markdown research knowledge base (research.md). Notes become ordinary `##` sections, so they remain readable and editable with normal file tools.",
+		description: "Append or search notes as Markdown sections in research.md.",
 		promptSnippet: researchNoteToolSystemPromptContribution.snippet,
 		promptGuidelines: [...researchNoteToolSystemPromptContribution.guidelines],
 		parameters: researchNoteSchema,

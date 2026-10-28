@@ -33,7 +33,7 @@ describe("buildSystemPrompt", () => {
 				cwd: process.cwd(),
 			});
 
-			expect(prompt).toContain("Show file paths clearly");
+			expect(prompt).toContain("show file paths");
 		});
 	});
 
@@ -116,9 +116,9 @@ describe("buildSystemPrompt", () => {
 			});
 
 			expect(prompt).toContain(
-				"- When reading sa docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory",
+				"- Resolve docs/... under Additional docs and examples/... under Examples, not the current working directory",
 			);
-			expect(prompt).toContain("environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md)");
+			expect(prompt).toContain("environment variables (docs/environment-variables.md), MCP (docs/mcp.md)");
 		});
 	});
 

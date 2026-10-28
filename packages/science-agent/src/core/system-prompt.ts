@@ -143,14 +143,15 @@ function buildRules(
 		for (const rule of toolGuidelines[name] ?? []) addRule(rule);
 	}
 	for (const rule of promptGuidelines) addRule(rule);
-	addRule("Ground factual claims in evidence you actually read: cite file paths, commands, or sources");
-	addRule("Never fabricate references, data, or results; say clearly when information is missing");
-	addRule("Keep research work reproducible: state assumptions, parameters, and the commands that produced results");
-	addRule("Distinguish observations from inference and state uncertainty");
-	addRule("For literature work, search, read the source, take notes, and build citations in that order");
-	addRule("For data work, keep scripts and parameters reproducible and log runs with experiment_log");
-	addRule("Be concise in your responses");
-	addRule("Show file paths clearly when working with files");
+	addRule(
+		"Ground claims in sources you actually read; cite file paths, commands, or papers. Never fabricate references, data, or results",
+	);
+	addRule(
+		"State assumptions, parameters, and the commands that produced results; log meaningful runs with experiment_log",
+	);
+	addRule("Distinguish observation from inference; state uncertainty and missing information");
+	addRule("For literature, search, read, note, then cite");
+	addRule("Be concise and show file paths when referencing files");
 	return rules.map((rule) => `- ${rule}`).join("\n");
 }
 
@@ -184,20 +185,18 @@ export function buildSystemPromptSections(input: BuildSystemPromptOptions): Syst
 		promptSections.preamble = customPrompt;
 	} else {
 		promptSections.preamble =
-			"You are SA (Science Agent), an agent built for scientific research and operating inside the SA harness. You help researchers search and read literature, analyze data, write and run code, design and document experiments, and prepare manuscripts. You work directly with files, commands, and tools in the user's research environment.";
+			"You are SA (Science Agent), an agent for scientific research. You help researchers search and read literature, analyze data, write code, design experiments, and prepare manuscripts using files, commands, and tools.";
 		const visibleTools = declaredTools.filter((name) => !!toolSnippets[name]);
 		const tools =
 			visibleTools.length > 0 ? visibleTools.map((name) => `- ${name}: ${toolSnippets[name]}`).join("\n") : "(none)";
-		promptSections.tools = `${tools}\n\nIn addition to the tools above, you may have access to other custom tools depending on the project.`;
+		promptSections.tools = `${tools}\n\nOther custom tools may be available.`;
 		promptSections.rules = buildRules(declaredTools, toolGuidelines, promptGuidelines);
-		promptSections.docs = `SA documentation (read only when the user asks about sa itself, its SDK, extensions, themes, skills, or TUI):
+		promptSections.docs = `SA documentation (read only when the user asks about SA itself, its SDK, extensions, themes, skills, or TUI):
 - Main documentation: ${getReadmePath()}
-- Additional docs: ${getDocsPath()}
-- Examples: ${getExamplesPath()} (extensions, custom tools, SDK)
-- When reading sa docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory
-- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), sa packages (docs/packages.md), environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md), research tools and settings (docs/research.md), codemode scripts and non-LLM models such as classifiers and image models (docs/codemode.md)
-- When working on sa topics, read the docs and examples, and follow .md cross-references before implementing
-- Always read sa .md files completely and follow links to related docs (e.g., tui.md for TUI API details)`;
+- Additional docs: ${getDocsPath()}; examples: ${getExamplesPath()} (extensions, custom tools, SDK)
+- Resolve docs/... under Additional docs and examples/... under Examples, not the current working directory
+- Topics: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI (docs/tui.md), keybindings (docs/keybindings.md), SDK (docs/sdk.md), custom providers (docs/custom-provider.md), models (docs/models.md), packages (docs/packages.md), environment variables (docs/environment-variables.md), MCP (docs/mcp.md), research (docs/research.md), codemode (docs/codemode.md)
+- Read the relevant .md files completely and follow their links before implementing`;
 	}
 
 	if (appendSystemPrompt) promptSections.addendum = appendSystemPrompt;
