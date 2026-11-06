@@ -8,6 +8,10 @@
 - After logging into a custom provider, SA selects the first entered model when the bundled default is unavailable.
 - `install.sh` and `install.ps1` now fall back to GitHub acceleration mirrors when the direct release download fails. Set `SA_GITHUB_MIRROR` to choose a prefix, or `SA_NO_MIRROR=1` to disable the fallback.
 
+### Fixed
+
+- Updated `minimatch` to 11.0.5 to address GHSA-g3hv-75wg-m249, fixing the scheduled npm audit workflow.
+
 ## [0.1.1-1029] - 2026-10-28
 
 ### Changed
