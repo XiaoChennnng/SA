@@ -19,12 +19,16 @@ Run `/logout` and select a provider to remove its stored credential. This does n
 
 ## Custom OpenAI or Anthropic base URL
 
-Select **OpenAI (custom)** or **Anthropic (custom)** in `/login` to send either official protocol through a proxy, gateway, or compatible endpoint. The flow prompts for a base URL and API key, then stores both in `auth.json`; `/logout` removes them together.
+Select **OpenAI (custom)** or **Anthropic (custom)** in `/login` to send either official protocol through a proxy, gateway, or compatible endpoint. The flow prompts for a base URL, an API key, and optional model IDs, then stores them in `auth.json`; `/logout` removes them together.
 
-- **OpenAI (custom)** uses the Chat Completions API (`openai-completions`) and reuses the bundled OpenAI model IDs, which most compatible servers and relays accept.
-- **Anthropic (custom)** uses the Anthropic Messages API (`anthropic-messages`) and reuses the bundled Anthropic model IDs.
+- **OpenAI (custom)** uses the Chat Completions API (`openai-completions`).
+- **Anthropic (custom)** uses the Anthropic Messages API (`anthropic-messages`).
 
-Leave the base URL empty to use the official endpoint. These entries do not read `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`; use the standard OpenAI and Anthropic entries for environment-based authentication. To add models that are not in the bundled catalog, define them in [`models.json`](models.md#configure-a-compatible-endpoint).
+Leave the base URL empty to use the official endpoint. For model IDs, enter a comma-separated list such as `gpt-5.5, my-relay-model` or `claude-opus-4-8, my-relay-model`. An ID that already exists in SA's bundled catalog reuses that model's context window, pricing, input support, and other metadata. Any other name becomes a model with conservative defaults: 128K context, 16K output, text input, and no reasoning. The endpoint's `/model` list then contains exactly the entered IDs.
+
+Leave the model prompt empty to list the bundled OpenAI or Anthropic catalog instead. Re-run `/login <provider>` to change the list; the IDs are stored with the credential under `SA_OPENAI_CUSTOM_MODELS` or `SA_ANTHROPIC_CUSTOM_MODELS` in `auth.json`.
+
+These entries do not read `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`; use the standard OpenAI and Anthropic entries for environment-based authentication. To override context limits, pricing, sampling, or compatibility for a model, define it in [`models.json`](models.md#configure-a-compatible-endpoint).
 
 ## Use an API key from the environment
 

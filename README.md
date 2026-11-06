@@ -28,6 +28,40 @@ irm https://raw.githubusercontent.com/XiaoChennnng/SA/main/install.ps1 | iex
 
 安装脚本会自动识别系统和架构，从 [Releases](https://github.com/XiaoChennnng/SA/releases) 下载并校验 SHA256，安装到 `~/.local/bin`（Windows 为 `%LOCALAPPDATA%\SA`）。也可以手动下载 `sa-darwin-arm64.tar.gz`、`sa-linux-x64.tar.gz`、`sa-windows-x64.zip` 等资产。
 
+### 网络受限时
+
+直连 GitHub 失败时，安装脚本会自动依次尝试 `ghfast.top`、`gh-proxy.com`、`ghproxy.net`、`github.moeyy.xyz` 等下载镜像，校验方式不变。
+
+安装脚本本身也可以从镜像获取：
+
+```bash
+curl -fsSL https://ghfast.top/https://raw.githubusercontent.com/XiaoChennnng/SA/main/install.sh | sh
+
+# 或使用 jsDelivr
+curl -fsSL https://cdn.jsdelivr.net/gh/XiaoChennnng/SA@main/install.sh | sh
+```
+
+Windows PowerShell：
+
+```powershell
+irm https://ghfast.top/https://raw.githubusercontent.com/XiaoChennnng/SA/main/install.ps1 | iex
+
+# 或使用 jsDelivr
+irm https://cdn.jsdelivr.net/gh/XiaoChennnng/SA@main/install.ps1 | iex
+```
+
+可用 `SA_GITHUB_MIRROR` 指定优先使用的镜像前缀（脚本会先试该镜像，再试直连），或用 `SA_NO_MIRROR=1` 禁用自动回退：
+
+```bash
+export SA_GITHUB_MIRROR=https://ghfast.top
+curl -fsSL https://raw.githubusercontent.com/XiaoChennnng/SA/main/install.sh | sh
+```
+
+```powershell
+$env:SA_GITHUB_MIRROR = "https://ghfast.top"
+irm https://raw.githubusercontent.com/XiaoChennnng/SA/main/install.ps1 | iex
+```
+
 安装完成后，在要工作的目录中运行：
 
 ```bash

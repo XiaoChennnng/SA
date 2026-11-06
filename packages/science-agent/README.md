@@ -30,6 +30,8 @@ irm https://raw.githubusercontent.com/XiaoChennnng/SA/main/install.ps1 | iex
 
 安装后运行 `sa`，首次使用 `/login` 连接模型服务。配置位于 `~/.sa/agent`。
 
+直连 GitHub 失败时，安装脚本会自动尝试 `ghfast.top`、`gh-proxy.com`、`ghproxy.net`、`github.moeyy.xyz` 等镜像；也可用 `SA_GITHUB_MIRROR=https://ghfast.top` 指定优先镜像，或用 `SA_NO_MIRROR=1` 禁用回退。脚本本身可从 `https://cdn.jsdelivr.net/gh/XiaoChennnng/SA@main/install.sh`（Windows 为 `install.ps1`）获取。详见仓库根目录 [README](../../README.md#网络受限时)。
+
 ## 从源码运行
 
 需要 Node.js 22.19 或更高版本。在仓库根目录：

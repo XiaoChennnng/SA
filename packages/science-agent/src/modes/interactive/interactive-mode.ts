@@ -17,6 +17,7 @@ import {
 	type Model,
 	type Usage,
 } from "@sa/ai/compat";
+import { isCustomModelProvider } from "@sa/ai/providers/custom-base-url";
 import type {
 	AutocompleteItem,
 	AutocompleteProvider,
@@ -6759,7 +6760,10 @@ export class InteractiveMode {
 					selectionError = `${actionLabel}, but no models are available for that provider. Use /model to select a model.`;
 				} else {
 					const defaultModelId = defaultModelPerProvider[providerId];
-					selectedModel = providerModels.find((model) => model.id === defaultModelId);
+					selectedModel =
+						providerModels.find((model) => model.id === defaultModelId) ??
+						// Custom endpoints may not serve the bundled default model; use the first entered ID.
+						(isCustomModelProvider(providerId) ? providerModels[0] : undefined);
 					if (!selectedModel) {
 						selectionError = `${actionLabel}, but its default model "${defaultModelId}" is not available. Use /model to select a model.`;
 					} else {

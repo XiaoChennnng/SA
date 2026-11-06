@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- **OpenAI (custom)** and **Anthropic (custom)** login now accepts a comma-separated model ID list. IDs that exist in the bundled catalog reuse their metadata; arbitrary names create custom models with conservative defaults, so these endpoints are no longer limited to the two vendors' official models.
+- After logging into a custom provider, SA selects the first entered model when the bundled default is unavailable.
+- `install.sh` and `install.ps1` now fall back to GitHub acceleration mirrors when the direct release download fails. Set `SA_GITHUB_MIRROR` to choose a prefix, or `SA_NO_MIRROR=1` to disable the fallback.
+
 ## [0.1.1-1029] - 2026-10-28
 
 ### Changed
