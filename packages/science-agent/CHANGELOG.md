@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- The OAuth sign-in success and error pages now show the SA pixel S logo instead of the upstream Pi logo.
+
 ## [0.1.2-1030] - 2026-11-07
 
 ### Added
