@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- New `/update` command checks the published SA release and installs the latest version through the active package manager after you confirm. The installed release carries its own bundled model catalog.
+
 ### Changed
 
 - Refreshed the bundled model catalog from upstream provider listings and updated provider tests to current model IDs.

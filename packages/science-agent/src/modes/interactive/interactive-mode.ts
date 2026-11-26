@@ -122,6 +122,7 @@ import type { SourceInfo } from "../../core/source-info.ts";
 import { withBuiltInRenderers } from "../../core/tools/renderers/index.ts";
 import type { TruncationResult } from "../../core/tools/truncate.ts";
 import { hasTrustRequiringProjectResources, ProjectTrustStore } from "../../core/trust-manager.ts";
+import { checkForUpdate, planSelfUpdate, runUpdateCommand, type UpdateCheckResult } from "../../core/update.ts";
 import { getUsageCostBreakdown } from "../../core/usage-totals.ts";
 import {
 	createLocalWorkspace,
@@ -3162,6 +3163,11 @@ export class InteractiveMode {
 				await this.handleDoctorCommand(text.slice("/doctor".length).trim());
 				return;
 			}
+			if (text === "/update") {
+				this.editor.setText("");
+				await this.handleUpdateCommand();
+				return;
+			}
 			if (text === "/ssh" || text.startsWith("/ssh ")) {
 				this.editor.setText("");
 				await this.handleSshCommand(text.slice("/ssh".length).trim());
@@ -4862,6 +4868,45 @@ export class InteractiveMode {
 		this.editorContainer.addChild(created.component);
 		this.ui.setFocus(created.focus);
 		this.ui.requestRender();
+	}
+
+	private async handleUpdateCommand(): Promise<void> {
+		this.showStatus("Checking for updates…");
+		let check: UpdateCheckResult;
+		try {
+			check = await checkForUpdate();
+		} catch (error) {
+			this.showError(`Update check failed: ${error instanceof Error ? error.message : String(error)}`);
+			return;
+		}
+		if (!check.updateAvailable) {
+			this.showStatus(`${APP_NAME} ${check.currentVersion} is up to date.`);
+			return;
+		}
+
+		const confirmed = await this.showExtensionConfirm(
+			"Update available",
+			`${APP_NAME} ${check.currentVersion} → ${check.latestVersion}. Install it now?`,
+		);
+		if (!confirmed) {
+			this.showStatus(`Update to ${check.latestVersion} cancelled.`);
+			return;
+		}
+
+		const plan = planSelfUpdate(check.latestVersion);
+		if (!plan.command) {
+			this.showError(plan.instruction ?? `This installation of ${APP_NAME} cannot be updated automatically.`);
+			return;
+		}
+
+		this.showStatus(`Updating to ${check.latestVersion} with ${plan.command.display}…`);
+		try {
+			await runUpdateCommand(plan.command);
+		} catch (error) {
+			this.showError(`Update failed: ${error instanceof Error ? error.message : String(error)}`);
+			return;
+		}
+		this.showStatus(`Updated to ${check.latestVersion}. Restart ${APP_NAME} to use the new version.`);
 	}
 
 	private async handleDoctorCommand(args: string): Promise<void> {
