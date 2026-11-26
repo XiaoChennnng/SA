@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Refreshed the bundled model catalog from upstream provider listings and updated provider tests to current model IDs.
+
 ### Fixed
 
 - The OAuth sign-in success and error pages now show the SA pixel S logo instead of the upstream Pi logo.
