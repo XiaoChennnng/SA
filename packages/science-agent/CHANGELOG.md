@@ -4,7 +4,7 @@
 
 ### Added
 
-- New `/update` command checks the published SA release and installs the latest version through the active package manager after you confirm. The installed release carries its own bundled model catalog.
+- New `/update` command checks the published SA release and installs the latest version through the active package manager after you confirm. `/update models` downloads the newest model catalog from the repository into the SA config directory and applies it on the next start, so the model list can be refreshed without updating SA.
 
 ### Changed
 

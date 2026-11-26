@@ -101,6 +101,7 @@ import { FooterDataProvider, type ReadonlyFooterDataProvider } from "../../core/
 import { configureHttpDispatcher, formatHttpIdleTimeoutMs } from "../../core/http-dispatcher.ts";
 import { type AppKeybinding, KeybindingsManager } from "../../core/keybindings.ts";
 import { createCompactionSummaryMessage, createCustomMessage } from "../../core/messages.ts";
+import { getModelDataCacheDir } from "../../core/model-data-cache.ts";
 import {
 	defaultModelPerProvider,
 	findExactModelReferenceMatch,
@@ -122,7 +123,14 @@ import type { SourceInfo } from "../../core/source-info.ts";
 import { withBuiltInRenderers } from "../../core/tools/renderers/index.ts";
 import type { TruncationResult } from "../../core/tools/truncate.ts";
 import { hasTrustRequiringProjectResources, ProjectTrustStore } from "../../core/trust-manager.ts";
-import { checkForUpdate, planSelfUpdate, runUpdateCommand, type UpdateCheckResult } from "../../core/update.ts";
+import {
+	checkForUpdate,
+	type ModelDataRefreshResult,
+	planSelfUpdate,
+	refreshModelData,
+	runUpdateCommand,
+	type UpdateCheckResult,
+} from "../../core/update.ts";
 import { getUsageCostBreakdown } from "../../core/usage-totals.ts";
 import {
 	createLocalWorkspace,
@@ -3163,9 +3171,14 @@ export class InteractiveMode {
 				await this.handleDoctorCommand(text.slice("/doctor".length).trim());
 				return;
 			}
-			if (text === "/update") {
+			if (text === "/update" || text.startsWith("/update ")) {
 				this.editor.setText("");
-				await this.handleUpdateCommand();
+				const updateArg = text.slice("/update".length).trim();
+				if (updateArg === "models") {
+					await this.handleUpdateModelsCommand();
+				} else {
+					await this.handleUpdateCommand();
+				}
 				return;
 			}
 			if (text === "/ssh" || text.startsWith("/ssh ")) {
@@ -4907,6 +4920,21 @@ export class InteractiveMode {
 			return;
 		}
 		this.showStatus(`Updated to ${check.latestVersion}. Restart ${APP_NAME} to use the new version.`);
+	}
+
+	private async handleUpdateModelsCommand(): Promise<void> {
+		this.showStatus("Downloading the latest model catalog…");
+		let result: ModelDataRefreshResult;
+		try {
+			result = await refreshModelData(getModelDataCacheDir(getAgentDir()));
+		} catch (error) {
+			this.showError(`Model catalog update failed: ${error instanceof Error ? error.message : String(error)}`);
+			return;
+		}
+		const generated = result.generatedAt ? `, generated ${result.generatedAt}` : "";
+		this.showStatus(
+			`Model catalog updated (${result.files} provider files${generated}). Restart ${APP_NAME} to use the new models.`,
+		);
 	}
 
 	private async handleDoctorCommand(args: string): Promise<void> {

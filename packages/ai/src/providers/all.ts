@@ -1,5 +1,6 @@
+import { flattenChatModelCatalog } from "../model-catalog.ts";
 import { CLASSIFIER_MODELS, IMAGE_MODELS, MODELS } from "../models.generated.ts";
-import { type CreateModelsOptions, createModels, type MutableModels, type Provider } from "../models.ts";
+import { type CreateModelsOptions, createModels, isModelType, type MutableModels, type Provider } from "../models.ts";
 import type { AnyModel, Api, ClassifierApi, ClassifierModel, ImageApi, ImageModel, Model } from "../types.ts";
 import { amazonBedrockProvider } from "./amazon-bedrock.ts";
 import { antLingProvider } from "./ant-ling.ts";
@@ -57,13 +58,42 @@ type BuiltinClassifierModelId<TProvider extends BuiltinProvider> = keyof (typeof
 type CatalogApi<TEntry> = TEntry extends { api: infer TApi extends string } ? TApi : never;
 
 /** Typed read of one generated built-in chat model. */
+type ChatModelMap = Record<string, Model<Api>>;
+
+// Hosts may download a newer model list at runtime (for example SA's /update models).
+// Downloaded provider files replace the bundled catalog for that provider only.
+let builtinChatModelOverrides: Record<string, ChatModelMap> | undefined;
+
+/** Replaces bundled chat models for the given provider data files. Unknown files keep the bundled catalog. */
+export function setBuiltinChatModelOverrides(files: Record<string, unknown>): void {
+	const next: Record<string, ChatModelMap> = {};
+	for (const [file, values] of Object.entries(files)) {
+		if (!file.endsWith(".json") || file.includes("/") || file.includes("\\") || file.includes("..")) continue;
+		if (!values || typeof values !== "object") continue;
+		const provider = file.slice(0, -".json".length);
+		try {
+			next[provider] = flattenChatModelCatalog(provider as never, values as never) as unknown as ChatModelMap;
+		} catch {
+			// Keep the bundled catalog for providers whose downloaded data cannot be parsed.
+		}
+	}
+	builtinChatModelOverrides = Object.keys(next).length > 0 ? next : undefined;
+}
+
+/** Drops runtime model overrides and returns to the bundled catalog. */
+export function clearBuiltinChatModelOverrides(): void {
+	builtinChatModelOverrides = undefined;
+}
+
+function chatModelMap(provider: string): ChatModelMap | undefined {
+	return builtinChatModelOverrides?.[provider] ?? (MODELS as Record<string, ChatModelMap | undefined>)[provider];
+}
+
 export function getBuiltinModel<TProvider extends BuiltinProvider, TModelId extends BuiltinChatModelId<TProvider>>(
 	provider: TProvider,
 	modelId: TModelId,
 ): Model<CatalogApi<(typeof MODELS)[TProvider][TModelId]>> {
-	return (MODELS as Record<string, Record<string, Model<Api>> | undefined>)[provider]?.[modelId as string] as Model<
-		CatalogApi<(typeof MODELS)[TProvider][TModelId]>
-	>;
+	return chatModelMap(provider)?.[modelId as string] as Model<CatalogApi<(typeof MODELS)[TProvider][TModelId]>>;
 }
 
 /** Typed read of one generated built-in image model. */
@@ -90,7 +120,11 @@ export function getBuiltinClassifierModel<
 }
 
 export function getBuiltinProviders(): BuiltinProvider[] {
-	return Object.keys(MODELS) as BuiltinProvider[];
+	const providers = new Set(Object.keys(MODELS));
+	for (const provider of Object.keys(builtinChatModelOverrides ?? {})) {
+		providers.add(provider);
+	}
+	return [...providers] as BuiltinProvider[];
 }
 
 /** Generation timestamp shared by all built-in provider catalogs. */
@@ -102,7 +136,7 @@ export function getBuiltinModelDataGeneratedAt(): number | undefined {
 export function getBuiltinModels<TProvider extends BuiltinProvider>(
 	provider: TProvider,
 ): Model<CatalogApi<(typeof MODELS)[TProvider][BuiltinChatModelId<TProvider>]>>[] {
-	const models = (MODELS as Record<string, Record<string, Model<Api>> | undefined>)[provider];
+	const models = chatModelMap(provider);
 	return Object.values(models ?? {}) as Model<CatalogApi<(typeof MODELS)[TProvider][BuiltinChatModelId<TProvider>]>>[];
 }
 
@@ -130,9 +164,9 @@ export function getAllBuiltinModels<TProvider extends BuiltinProvider>(provider:
 	return [...getBuiltinModels(provider), ...getBuiltinImageModels(provider), ...getBuiltinClassifierModels(provider)];
 }
 
-/** All built-in providers, freshly constructed. */
+/** All built-in providers, freshly constructed with any runtime model overrides applied. */
 export function builtinProviders(): Provider[] {
-	return [
+	const providers: Provider[] = [
 		amazonBedrockProvider(),
 		antLingProvider(),
 		anthropicProvider(),
@@ -177,6 +211,18 @@ export function builtinProviders(): Provider[] {
 		zaiProvider(),
 		zaiCodingCnProvider(),
 	];
+	const overrides = builtinChatModelOverrides;
+	if (!overrides) return providers;
+	return providers.map((provider) => {
+		const models = overrides[provider.id];
+		if (!models) return provider;
+		const list = Object.values(models);
+		return {
+			...provider,
+			getModels: () => list.filter((model): model is Model<Api> => isModelType(model, "chat")),
+			getAllModels: () => list,
+		};
+	});
 }
 
 /** A `Models` collection with every built-in provider registered. */

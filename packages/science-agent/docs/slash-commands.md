@@ -57,7 +57,7 @@ Review a session before exporting it. Sessions can contain prompts, tool argumen
 | `/reload` | Reload keybindings, extensions, skills, templates, themes, and context files |
 | `/hotkeys` | Show active keyboard shortcuts |
 | `/changelog` | Show changelog entries |
-| `/update` | Check the published SA release, then install the latest version after confirmation. The update includes the model catalog generated for that release |
+| `/update [models]` | `/update` checks the published SA release and installs the latest version after confirmation. `/update models` downloads the newest model catalog into the SA config directory and applies it on the next start, so new models appear without updating SA |
 | `/quit` | Quit SA |
 
 ## Commands added by resources

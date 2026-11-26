@@ -45,6 +45,7 @@ import { AuthStorage, ReadOnlyAuthStorage } from "./core/auth-storage.ts";
 import { exportFromFile } from "./core/export-html/index.ts";
 import type { InlineExtension } from "./core/extensions/types.ts";
 import { applyHttpProxySettings, configureHttpDispatcher } from "./core/http-dispatcher.ts";
+import { applyCachedModelData } from "./core/model-data-cache.ts";
 import { resolveCliModel, resolveModelScope, type ScopedModel } from "./core/model-resolver.ts";
 import { ModelRuntime } from "./core/model-runtime.ts";
 import { restoreStdout, takeOverStdout } from "./core/output-guard.ts";
@@ -586,6 +587,8 @@ export async function main(args: string[], options?: MainOptions) {
 
 	const cwd = process.cwd();
 	const agentDir = getAgentDir();
+	// Apply a catalog downloaded by /update models before any runtime reads built-in models.
+	applyCachedModelData(agentDir);
 	const bootstrapSettingsManager = SettingsManager.create(cwd, agentDir, { projectTrusted: false });
 	applyHttpProxySettings(bootstrapSettingsManager.getGlobalSettings().httpProxy);
 	configureHttpDispatcher();

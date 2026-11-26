@@ -1,5 +1,20 @@
 import { describe, expect, it } from "vitest";
+import { isSafeModelDataFileName } from "../src/core/model-data-cache.ts";
 import { isUpdateAvailable } from "../src/core/update.ts";
+
+describe("model data file names", () => {
+	it("accepts provider data files", () => {
+		expect(isSafeModelDataFileName("anthropic.json")).toBe(true);
+	});
+
+	it("rejects path traversal", () => {
+		expect(isSafeModelDataFileName("../anthropic.json")).toBe(false);
+	});
+
+	it("rejects non-json files", () => {
+		expect(isSafeModelDataFileName("anthropic.txt")).toBe(false);
+	});
+});
 
 describe("update version comparison", () => {
 	it("treats a higher build suffix as an update", () => {
