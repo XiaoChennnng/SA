@@ -42,7 +42,14 @@ jobs:
             system: aarch64-linux
           - runner: macos-latest
             system: aarch64-darwin
+            # The multi-user installer registers nix-daemon with launchctl,
+            # which intermittently fails on hosted macOS runners with
+            # "Could not kickstart service ... Operation not permitted".
+            # A single-user install skips the daemon entirely, which is
+            # enough for this smoke build.
+            install_options: --no-daemon
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
@@ -55,13 +62,23 @@ jobs:
         uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
         with:
           github_access_token: ${{ github.token }}
+          install_options: ${{ matrix.install_options }}
 
       - name: Evaluate all systems
         if: ${{ matrix.system == 'x86_64-linux' }}
         run: nix flake check --all-systems --no-build
 
       - name: Build
-        run: nix build -L .
+        run: |
+          # Retry transient network/cache failures; Nix reuses completed work.
+          for attempt in 1 2 3; do
+            if nix build -L .; then
+              exit 0
+            fi
+            echo "::warning::nix build failed (attempt ${attempt}/3), retrying"
+            sleep 15
+          done
+          exit 1
 
       - name: Smoke-test
         run: |
